@@ -5,6 +5,8 @@ struct ContentView: View {
     @State private var inputText = ""
     @State private var apiKey = ""
     @State private var apiKeySet = false
+    @State private var showAPIKey = false
+    @State private var showSettings = false
     @FocusState private var inputFocused: Bool
 
     let inkDark = Color(red: 0.1, green: 0.07, blue: 0.035)
@@ -57,12 +59,16 @@ struct ContentView: View {
                     .italic()
                     .multilineTextAlignment(.center)
 
-                SecureField("sk-ant-...", text: $apiKey)
+                HStack(spacing: 0) {
+                    Group {
+                        if showAPIKey {
+                            TextField("sk-ant-...", text: $apiKey)
+                        } else {
+                            SecureField("sk-ant-...", text: $apiKey)
+                        }
+                    }
                     .font(.system(.body, design: .monospaced))
                     .padding(10)
-                    .background(Color.white.opacity(0.6))
-                    .cornerRadius(6)
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(faded, lineWidth: 1))
                     .submitLabel(.go)
                     .onSubmit {
                         if apiKey.hasPrefix("sk-") {
@@ -71,6 +77,28 @@ struct ContentView: View {
                             KeychainHelper.save(apiKey)
                         }
                     }
+
+                    Button(action: { showAPIKey.toggle() }) {
+                        Image(systemName: showAPIKey ? "eye.slash" : "eye")
+                            .foregroundColor(faded)
+                            .padding(.vertical, 10)
+                            .padding(.trailing, 6)
+                    }
+
+                    Button(action: {
+                        if let str = UIPasteboard.general.string {
+                            apiKey = str
+                        }
+                    }) {
+                        Image(systemName: "doc.on.clipboard")
+                            .foregroundColor(faded)
+                            .padding(.vertical, 10)
+                            .padding(.trailing, 10)
+                    }
+                }
+                .background(Color.white.opacity(0.6))
+                .cornerRadius(6)
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(faded, lineWidth: 1))
 
                 Button("Enter the Chamber") {
                     apiKeySet = true
@@ -181,6 +209,22 @@ struct ContentView: View {
                 }
             }
             .padding(16)
+        }
+        .overlay(alignment: .topTrailing) {
+            Button(action: { showSettings = true }) {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 18))
+                    .foregroundColor(faded)
+                    .padding(16)
+            }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView(
+                isPresented: $showSettings,
+                accent: accent, faded: faded,
+                vellum: vellum, inkDark: inkDark,
+                parchment: parchment
+            )
         }
     }
 

@@ -54,7 +54,22 @@ class TranslatorService: ObservableObject {
 
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            let (data, _) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            // Surface HTTP-level errors before attempting decode
+            if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+                let raw = String(data: data, encoding: .utf8) ?? "no body"
+                // Try to pull a message from Anthropic's error envelope
+                if let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let err = obj["error"] as? [String: Any],
+                   let msg = err["message"] as? String {
+                    errorMessage = "API error \(http.statusCode): \(msg)"
+                } else {
+                    errorMessage = "HTTP \(http.statusCode): \(raw.prefix(200))"
+                }
+                isLoading = false
+                return
+            }
 
             // Parse Anthropic response envelope
             let envelope = try JSONDecoder().decode(AnthropicResponse.self, from: data)
