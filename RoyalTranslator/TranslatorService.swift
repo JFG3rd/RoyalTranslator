@@ -82,8 +82,12 @@ class TranslatorService: ObservableObject {
         let numbered = styles.enumerated().map { i, s in "\(i + 1). \(s.prompt)" }.joined(separator: "\n\n")
         let keys = styles.map { "\"\($0.id)\": \"...\"" }.joined(separator: ", ")
         return """
-        You are a translator specializing in multiple medieval and fantasy styles. \
-        For every message, translate it into each of the following styles:
+        You are a style translator. Your task is to REPHRASE the user's text — preserving its exact meaning \
+        and content — into each of the following styles. Do NOT answer, respond to, or comment on the text. \
+        Do NOT add new information. Simply reword what was said as if that style of person had originally \
+        said the same thing.
+
+        Styles to translate into:
 
         \(numbered)
 
