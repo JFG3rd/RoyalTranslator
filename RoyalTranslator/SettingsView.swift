@@ -3,13 +3,10 @@ import SwiftUI
 struct SettingsView: View {
     @Binding var isPresented: Bool
     @Binding var defaultStyleIDsRaw: String
-    let accent: Color
-    let faded: Color
-    let vellum: Color
-    let inkDark: Color
-    let parchment: Color
+    let theme: AppTheme
 
     @State private var currentIcon: String? = UIApplication.shared.alternateIconName
+    @State private var expandedCategory: FilterCategory? = nil
 
     var defaultStyleIDs: Set<String> {
         Set(defaultStyleIDsRaw.split(separator: ",").map(String.init))
@@ -17,89 +14,134 @@ struct SettingsView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [vellum, parchment], startPoint: .topLeading, endPoint: .bottomTrailing)
+            LinearGradient(colors: [theme.bg1, theme.bg2],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
                 .ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: 28) {
+                VStack(spacing: 24) {
+
+                    // Header
                     HStack {
                         Text("Settings")
-                            .font(.custom("Georgia", size: 22))
-                            .fontWeight(.bold)
-                            .foregroundColor(accent)
+                            .font(.custom("Georgia", size: 22)).fontWeight(.bold)
+                            .foregroundColor(theme.accent)
                         Spacer()
                         Button(action: { isPresented = false }) {
                             Image(systemName: "xmark")
-                                .foregroundColor(faded)
-                                .font(.system(size: 18))
+                                .foregroundColor(theme.faded).font(.system(size: 18))
                         }
                     }
 
-                    // Default styles section
-                    VStack(alignment: .leading, spacing: 12) {
+                    // Default Styles
+                    VStack(alignment: .leading, spacing: 16) {
                         sectionHeader("Default Styles")
-                        Text("These styles are pre-selected each time you open the app. You can always adjust them per translation.")
+                        Text("Pre-selected each launch. Adjust per-translation using the chips on the main screen.")
                             .font(.custom("Georgia", size: 12))
-                            .foregroundColor(faded)
-                            .italic()
+                            .foregroundColor(theme.faded).italic()
 
-                        ForEach(TranslationStyle.all) { style in
-                            let isOn = defaultStyleIDs.contains(style.id)
-                            Toggle(isOn: Binding(
-                                get: { isOn },
-                                set: { enabled in
-                                    var ids = defaultStyleIDs
-                                    if enabled { ids.insert(style.id) } else { ids.remove(style.id) }
-                                    defaultStyleIDsRaw = ids.joined(separator: ",")
-                                }
-                            )) {
-                                HStack(spacing: 8) {
-                                    Text(style.emoji)
-                                    Text(style.label)
-                                        .font(.custom("Georgia", size: 15))
-                                        .foregroundColor(inkDark)
-                                }
-                            }
-                            .tint(accent)
+                        ForEach(FilterCategory.allCases.filter { $0 != .all }) { category in
+                            categorySection(category)
                         }
                     }
-                    .padding(20)
-                    .background(Color.white.opacity(0.4))
-                    .cornerRadius(8)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(faded, lineWidth: 1))
+                    .settingsCard(theme: theme)
 
-                    // App icon section
+                    // App Icon
                     VStack(alignment: .leading, spacing: 16) {
                         sectionHeader("App Icon")
                         HStack(spacing: 20) {
                             IconChoice(label: "Royal", imageName: "AppIconLight",
-                                       isSelected: currentIcon == nil, accent: accent, faded: faded) {
-                                setIcon(nil)
-                            }
+                                       isSelected: currentIcon == nil, theme: theme) { setIcon(nil) }
                             IconChoice(label: "Dark", imageName: "AppIconDark_120",
-                                       isSelected: currentIcon == "AppIconDark", accent: accent, faded: faded) {
-                                setIcon("AppIconDark")
-                            }
+                                       isSelected: currentIcon == "AppIconDark", theme: theme) { setIcon("AppIconDark") }
                         }
                     }
-                    .padding(20)
-                    .background(Color.white.opacity(0.4))
-                    .cornerRadius(8)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(faded, lineWidth: 1))
+                    .settingsCard(theme: theme)
                 }
-                .padding(28)
+                .padding(24)
             }
         }
         .font(.custom("Georgia", size: 16))
-        .foregroundColor(inkDark)
+        .foregroundColor(theme.inkDark)
+    }
+
+    // MARK: - Category Section
+
+    func categorySection(_ category: FilterCategory) -> some View {
+        let styles = TranslationStyle.all.filter { $0.category == category }
+        let onCount = styles.filter { defaultStyleIDs.contains($0.id) }.count
+        let isExpanded = expandedCategory == category
+
+        return VStack(spacing: 0) {
+            // Section header row
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    expandedCategory = isExpanded ? nil : category
+                }
+            }) {
+                HStack {
+                    Text(category.emoji)
+                    Text(category.rawValue)
+                        .font(.custom("Georgia", size: 15))
+                        .foregroundColor(theme.inkDark)
+                    Spacer()
+                    if onCount > 0 {
+                        Text("\(onCount) on")
+                            .font(.custom("Georgia", size: 11))
+                            .foregroundColor(theme.accent)
+                    }
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 12))
+                        .foregroundColor(theme.faded)
+                }
+                .padding(.vertical, 8)
+            }
+
+            if isExpanded {
+                Divider().background(theme.faded.opacity(0.4))
+                VStack(spacing: 0) {
+                    ForEach(styles) { style in
+                        let isOn = defaultStyleIDs.contains(style.id)
+                        Toggle(isOn: Binding(
+                            get: { isOn },
+                            set: { enabled in
+                                var ids = defaultStyleIDs
+                                if enabled { ids.insert(style.id) } else { ids.remove(style.id) }
+                                defaultStyleIDsRaw = ids.joined(separator: ",")
+                            }
+                        )) {
+                            HStack(spacing: 8) {
+                                Text(style.emoji)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(style.label)
+                                        .font(.custom("Georgia", size: 14))
+                                        .foregroundColor(theme.inkDark)
+                                    Text(style.language.rawValue + " · " + style.gender.rawValue)
+                                        .font(.custom("Georgia", size: 10))
+                                        .foregroundColor(theme.faded)
+                                }
+                            }
+                        }
+                        .tint(theme.accent)
+                        .padding(.vertical, 6)
+                        if style.id != styles.last?.id {
+                            Divider().background(theme.faded.opacity(0.2))
+                        }
+                    }
+                }
+                .padding(.top, 8)
+            }
+        }
+        .padding(.horizontal, 4)
+        .background(theme.cardFill.opacity(0.5))
+        .cornerRadius(6)
     }
 
     func sectionHeader(_ title: String) -> some View {
         Text(title)
             .font(.custom("Georgia", size: 13))
-            .kerning(1.5)
-            .textCase(.uppercase)
-            .foregroundColor(faded)
+            .kerning(1.5).textCase(.uppercase)
+            .foregroundColor(theme.faded)
     }
 
     private func setIcon(_ name: String?) {
@@ -109,12 +151,13 @@ struct SettingsView: View {
     }
 }
 
+// MARK: - Icon Choice
+
 struct IconChoice: View {
     let label: String
     let imageName: String
     let isSelected: Bool
-    let accent: Color
-    let faded: Color
+    let theme: AppTheme
     let action: () -> Void
 
     var body: some View {
@@ -122,21 +165,37 @@ struct IconChoice: View {
             VStack(spacing: 10) {
                 if let uiImage = UIImage(named: imageName) {
                     Image(uiImage: uiImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 80, height: 80)
-                        .cornerRadius(18)
+                        .resizable().aspectRatio(contentMode: .fill)
+                        .frame(width: 80, height: 80).cornerRadius(18)
                         .overlay(RoundedRectangle(cornerRadius: 18)
-                            .stroke(isSelected ? accent : faded, lineWidth: isSelected ? 3 : 1))
+                            .stroke(isSelected ? theme.accent : theme.faded, lineWidth: isSelected ? 3 : 1))
                 } else {
                     RoundedRectangle(cornerRadius: 18)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 80, height: 80)
+                        .fill(Color.gray.opacity(0.3)).frame(width: 80, height: 80)
                 }
                 Text(label)
                     .font(.custom("Georgia", size: 13))
-                    .foregroundColor(isSelected ? accent : faded)
+                    .foregroundColor(isSelected ? theme.accent : theme.faded)
             }
         }
+    }
+}
+
+// MARK: - Card Modifier
+
+private struct SettingsCardModifier: ViewModifier {
+    let theme: AppTheme
+    func body(content: Content) -> some View {
+        content
+            .padding(20)
+            .background(theme.cardFill)
+            .cornerRadius(8)
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(theme.cardStroke, lineWidth: 1))
+    }
+}
+
+extension View {
+    func settingsCard(theme: AppTheme) -> some View {
+        modifier(SettingsCardModifier(theme: theme))
     }
 }

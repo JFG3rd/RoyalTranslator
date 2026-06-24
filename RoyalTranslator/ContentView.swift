@@ -9,23 +9,34 @@ struct ContentView: View {
     @State private var showSettings = false
     @FocusState private var inputFocused: Bool
 
-    @AppStorage("defaultStyleIDs") private var defaultStyleIDsRaw: String = TranslationStyle.defaultIDs.joined(separator: ",")
+    @AppStorage("defaultStyleIDs") private var defaultStyleIDsRaw: String =
+        TranslationStyle.defaultIDs.joined(separator: ",")
 
     @State private var activeStyleIDs: Set<String> = TranslationStyle.defaultIDs
+    @State private var filterLanguage: FilterLanguage = .all
+    @State private var filterGender: FilterGender = .all
+    @State private var filterCategory: FilterCategory = .all
 
-    let inkDark   = Color(red: 0.1,  green: 0.07, blue: 0.035)
-    let vellum    = Color(red: 0.96, green: 0.93, blue: 0.84)
-    let parchment = Color(red: 0.93, green: 0.88, blue: 0.72)
-    let accent    = Color(red: 0.48, green: 0.23, blue: 0.12)
-    let faded     = Color(red: 0.62, green: 0.55, blue: 0.43)
+    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.horizontalSizeClass) var hSizeClass
+
+    var theme: AppTheme { AppTheme(scheme: colorScheme) }
+    var isIpad: Bool { hSizeClass == .regular }
 
     var defaultStyleIDs: Set<String> {
         Set(defaultStyleIDsRaw.split(separator: ",").map(String.init))
     }
 
+    var visibleStyles: [TranslationStyle] {
+        TranslationStyle.all.filter {
+            $0.matches(language: filterLanguage, gender: filterGender, category: filterCategory)
+        }
+    }
+
     var body: some View {
         ZStack {
-            LinearGradient(colors: [vellum, parchment], startPoint: .topLeading, endPoint: .bottomTrailing)
+            LinearGradient(colors: [theme.bg1, theme.bg2],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
                 .ignoresSafeArea()
 
             if !apiKeySet {
@@ -35,7 +46,7 @@ struct ContentView: View {
             }
         }
         .font(.custom("Georgia", size: 16))
-        .foregroundColor(inkDark)
+        .foregroundColor(theme.inkDark)
         .onAppear {
             activeStyleIDs = defaultStyleIDs
             if let savedKey = KeychainHelper.load(), savedKey.hasPrefix("sk-") {
@@ -53,20 +64,17 @@ struct ContentView: View {
             VStack(spacing: 6) {
                 Text("⚜️").font(.system(size: 40))
                 Text("The Royal Translator")
-                    .font(.custom("Georgia", size: 26))
-                    .fontWeight(.bold)
-                    .foregroundColor(accent)
-                Text("Shakespearean · Hofnarr · Royal Decree")
+                    .font(.custom("Georgia", size: 26)).fontWeight(.bold)
+                    .foregroundColor(theme.accent)
+                Text("Medieval Voices · Powered by Claude")
                     .font(.custom("Georgia", size: 13))
-                    .foregroundColor(faded)
-                    .italic()
+                    .foregroundColor(theme.faded).italic()
             }
 
             VStack(spacing: 16) {
-                Text("Enter your Anthropic API key to begin.\nIt is stored only in device memory.")
+                Text("Enter your Anthropic API key to begin.\nIt is stored securely in the device Keychain.")
                     .font(.custom("Georgia", size: 14))
-                    .foregroundColor(faded)
-                    .italic()
+                    .foregroundColor(theme.faded).italic()
                     .multilineTextAlignment(.center)
 
                 HStack(spacing: 0) {
@@ -80,57 +88,52 @@ struct ContentView: View {
                     .font(.system(.body, design: .monospaced))
                     .padding(10)
                     .submitLabel(.go)
-                    .onSubmit {
-                        if apiKey.hasPrefix("sk-") {
-                            apiKeySet = true
-                            service.apiKey = apiKey
-                            KeychainHelper.save(apiKey)
-                        }
-                    }
+                    .onSubmit { commitKey() }
+
                     Button(action: { showAPIKey.toggle() }) {
                         Image(systemName: showAPIKey ? "eye.slash" : "eye")
-                            .foregroundColor(faded)
-                            .padding(.vertical, 10)
-                            .padding(.trailing, 6)
+                            .foregroundColor(theme.faded)
+                            .padding(.vertical, 10).padding(.trailing, 6)
                     }
                     Button(action: {
-                        if let str = UIPasteboard.general.string { apiKey = str }
+                        if let s = UIPasteboard.general.string { apiKey = s }
                     }) {
                         Image(systemName: "doc.on.clipboard")
-                            .foregroundColor(faded)
-                            .padding(.vertical, 10)
-                            .padding(.trailing, 10)
+                            .foregroundColor(theme.faded)
+                            .padding(.vertical, 10).padding(.trailing, 10)
                     }
                 }
-                .background(Color.white.opacity(0.6))
+                .background(theme.inputFill)
                 .cornerRadius(6)
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(faded, lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(theme.faded, lineWidth: 1))
 
-                Button("Enter the Chamber") {
-                    apiKeySet = true
-                    service.apiKey = apiKey
-                    KeychainHelper.save(apiKey)
-                }
-                .disabled(!apiKey.hasPrefix("sk-"))
-                .padding(.horizontal, 24)
-                .padding(.vertical, 10)
-                .background(apiKey.hasPrefix("sk-") ? accent : faded)
-                .foregroundColor(vellum)
-                .cornerRadius(6)
-                .font(.custom("Georgia", size: 15))
+                Button("Enter the Chamber", action: commitKey)
+                    .disabled(!apiKey.hasPrefix("sk-"))
+                    .padding(.horizontal, 24).padding(.vertical, 10)
+                    .background(apiKey.hasPrefix("sk-") ? theme.accent : theme.faded)
+                    .foregroundColor(theme.bg1)
+                    .cornerRadius(6)
+                    .font(.custom("Georgia", size: 15))
 
                 Text("Get your key at console.anthropic.com")
                     .font(.custom("Georgia", size: 11))
-                    .foregroundColor(faded)
-                    .italic()
+                    .foregroundColor(theme.faded).italic()
             }
             .padding(28)
-            .background(Color.white.opacity(0.4))
+            .background(theme.cardFill)
             .cornerRadius(8)
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(faded, lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(theme.cardStroke, lineWidth: 1))
         }
+        .frame(maxWidth: 500)
         .padding(32)
         .onChange(of: apiKey) { service.apiKey = apiKey }
+    }
+
+    func commitKey() {
+        guard apiKey.hasPrefix("sk-") else { return }
+        service.apiKey = apiKey
+        KeychainHelper.save(apiKey)
+        apiKeySet = true
     }
 
     // MARK: - Translator Screen
@@ -141,82 +144,57 @@ struct ContentView: View {
 
                 // Header
                 VStack(spacing: 4) {
-                    Text("⚜️").font(.system(size: 36))
+                    Text("⚜️").font(.system(size: isIpad ? 44 : 36))
                     Text("The Royal Translator")
-                        .font(.custom("Georgia", size: 24))
-                        .fontWeight(.bold)
-                        .foregroundColor(accent)
+                        .font(.custom("Georgia", size: isIpad ? 30 : 24)).fontWeight(.bold)
+                        .foregroundColor(theme.accent)
                     Button("Forget API Key") {
-                        KeychainHelper.delete()
-                        apiKey = ""
-                        apiKeySet = false
+                        KeychainHelper.delete(); apiKey = ""; apiKeySet = false
                     }
-                    .font(.custom("Georgia", size: 11))
-                    .foregroundColor(faded)
+                    .font(.custom("Georgia", size: 11)).foregroundColor(theme.faded)
                 }
                 .padding(.top, 16)
+
+                // Filter chips
+                filterChipsView
+
+                Divider().background(theme.faded.opacity(0.4))
 
                 // Style chips
                 styleChipsView
 
                 // Input card
-                VStack(alignment: .leading, spacing: 12) {
-                    TextEditor(text: $inputText)
-                        .font(.custom("Georgia", size: 16))
-                        .foregroundColor(inkDark)
-                        .frame(minHeight: 80, maxHeight: 120)
-                        .scrollContentBackground(.hidden)
-                        .background(Color.clear)
-                        .focused($inputFocused)
+                inputCard
 
-                    Divider().background(faded)
-
-                    HStack {
-                        Text("Tap Translate or press Return")
-                            .font(.custom("Georgia", size: 12))
-                            .foregroundColor(faded)
-                            .italic()
-                        Spacer()
-                        Button(action: translate) {
-                            if service.isLoading {
-                                ProgressView().tint(vellum)
-                                    .padding(.horizontal, 20).padding(.vertical, 8)
-                            } else {
-                                Text("Translate")
-                                    .padding(.horizontal, 20).padding(.vertical, 8)
-                            }
-                        }
-                        .disabled(service.isLoading || inputText.trimmingCharacters(in: .whitespaces).isEmpty || activeStyleIDs.isEmpty)
-                        .background(service.isLoading || inputText.isEmpty || activeStyleIDs.isEmpty ? faded : accent)
-                        .foregroundColor(vellum)
-                        .cornerRadius(6)
-                        .font(.custom("Georgia", size: 15))
-                    }
-                }
-                .padding(16)
-                .background(Color.white.opacity(0.4))
-                .cornerRadius(8)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(faded, lineWidth: 1))
-
+                // Error
                 if let error = service.errorMessage {
                     Text("⚠️ \(error)")
                         .font(.custom("Georgia", size: 13))
-                        .foregroundColor(accent)
-                        .italic()
+                        .foregroundColor(theme.accent).italic()
                         .multilineTextAlignment(.center)
                 }
 
-                ForEach(service.history) { entry in
-                    ResultCard(entry: entry, accent: accent, faded: faded, inkDark: inkDark)
+                // Results — 2-column grid on iPad
+                if isIpad {
+                    let columns = [GridItem(.flexible()), GridItem(.flexible())]
+                    LazyVGrid(columns: columns, spacing: 16) {
+                        ForEach(service.history) { entry in
+                            ResultCard(entry: entry, theme: theme, isIpad: isIpad)
+                        }
+                    }
+                } else {
+                    ForEach(service.history) { entry in
+                        ResultCard(entry: entry, theme: theme, isIpad: isIpad)
+                    }
                 }
             }
-            .padding(16)
+            .padding(isIpad ? 24 : 16)
         }
         .overlay(alignment: .topTrailing) {
             Button(action: { showSettings = true }) {
                 Image(systemName: "gearshape")
                     .font(.system(size: 18))
-                    .foregroundColor(faded)
+                    .foregroundColor(theme.faded)
                     .padding(16)
             }
         }
@@ -224,11 +202,66 @@ struct ContentView: View {
             SettingsView(
                 isPresented: $showSettings,
                 defaultStyleIDsRaw: $defaultStyleIDsRaw,
-                accent: accent, faded: faded,
-                vellum: vellum, inkDark: inkDark,
-                parchment: parchment
+                theme: theme
             )
             .onDisappear { activeStyleIDs = defaultStyleIDs }
+        }
+    }
+
+    // MARK: - Filter Chips
+
+    var filterChipsView: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                filterGroup(title: "Language") {
+                    ForEach(FilterLanguage.allCases) { f in
+                        filterChip(f.emoji + " " + f.rawValue, on: filterLanguage == f) {
+                            filterLanguage = f
+                        }
+                    }
+                }
+                Divider().frame(height: 24).background(theme.faded.opacity(0.4))
+                filterGroup(title: "Gender") {
+                    ForEach(FilterGender.allCases) { f in
+                        filterChip(f.emoji + " " + f.rawValue, on: filterGender == f) {
+                            filterGender = f
+                        }
+                    }
+                }
+                Divider().frame(height: 24).background(theme.faded.opacity(0.4))
+                filterGroup(title: "Role") {
+                    ForEach(FilterCategory.allCases) { f in
+                        filterChip(f.emoji + " " + f.rawValue, on: filterCategory == f) {
+                            filterCategory = f
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+
+    func filterGroup<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        HStack(spacing: 4) {
+            Text(title)
+                .font(.custom("Georgia", size: 9))
+                .kerning(1.2)
+                .textCase(.uppercase)
+                .foregroundColor(theme.faded.opacity(0.7))
+            content()
+        }
+    }
+
+    func filterChip(_ label: String, on: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(.custom("Georgia", size: 11))
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(on ? theme.accent.opacity(0.85) : theme.chipOff)
+                .foregroundColor(on ? theme.chipOnText : theme.faded)
+                .cornerRadius(16)
+                .overlay(RoundedRectangle(cornerRadius: 16)
+                    .stroke(on ? theme.accent : theme.faded.opacity(0.4), lineWidth: 1))
         }
     }
 
@@ -237,7 +270,7 @@ struct ContentView: View {
     var styleChipsView: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(TranslationStyle.all) { style in
+                ForEach(visibleStyles) { style in
                     let on = activeStyleIDs.contains(style.id)
                     Button(action: {
                         if on { activeStyleIDs.remove(style.id) }
@@ -245,23 +278,71 @@ struct ContentView: View {
                     }) {
                         HStack(spacing: 4) {
                             Text(style.emoji).font(.system(size: 13))
-                            Text(style.label)
-                                .font(.custom("Georgia", size: 12))
+                            Text(style.label).font(.custom("Georgia", size: 12))
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(on ? accent : Color.white.opacity(0.35))
-                        .foregroundColor(on ? vellum : faded)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(on ? theme.chipOn : theme.chipOff)
+                        .foregroundColor(on ? theme.chipOnText : theme.chipOffText)
                         .cornerRadius(20)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(on ? accent : faded, lineWidth: 1)
-                        )
+                        .overlay(RoundedRectangle(cornerRadius: 20)
+                            .stroke(on ? theme.accent : theme.faded.opacity(0.5), lineWidth: 1))
                     }
+                }
+                if visibleStyles.isEmpty {
+                    Text("No styles match the filters")
+                        .font(.custom("Georgia", size: 12))
+                        .foregroundColor(theme.faded).italic()
                 }
             }
             .padding(.horizontal, 16)
         }
+    }
+
+    // MARK: - Input Card
+
+    var inputCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            TextEditor(text: $inputText)
+                .font(.custom("Georgia", size: 16))
+                .foregroundColor(theme.inkDark)
+                .frame(minHeight: isIpad ? 100 : 80, maxHeight: isIpad ? 160 : 120)
+                .scrollContentBackground(.hidden)
+                .background(Color.clear)
+                .focused($inputFocused)
+
+            Divider().background(theme.faded)
+
+            HStack {
+                Text(activeStyleIDs.isEmpty ? "Select at least one style" : "Tap Translate or press Return")
+                    .font(.custom("Georgia", size: 12))
+                    .foregroundColor(theme.faded).italic()
+                Spacer()
+                Button(action: translate) {
+                    if service.isLoading {
+                        ProgressView().tint(theme.bg1)
+                            .padding(.horizontal, 20).padding(.vertical, 8)
+                    } else {
+                        Text("Translate")
+                            .padding(.horizontal, 20).padding(.vertical, 8)
+                    }
+                }
+                .disabled(service.isLoading || inputText.trimmingCharacters(in: .whitespaces).isEmpty || activeStyleIDs.isEmpty)
+                .background(canTranslate ? theme.accent : theme.faded)
+                .foregroundColor(theme.bg1)
+                .cornerRadius(6)
+                .font(.custom("Georgia", size: 15))
+            }
+        }
+        .padding(16)
+        .background(theme.cardFill)
+        .cornerRadius(8)
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(theme.cardStroke, lineWidth: 1))
+    }
+
+    var canTranslate: Bool {
+        !service.isLoading &&
+        !inputText.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !activeStyleIDs.isEmpty
     }
 
     func translate() {
@@ -278,41 +359,46 @@ struct ContentView: View {
 
 struct ResultCard: View {
     let entry: TranslationEntry
-    let accent: Color
-    let faded: Color
-    let inkDark: Color
+    let theme: AppTheme
+    let isIpad: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            // Original text
             Text("\"\(entry.original)\"")
                 .font(.custom("Georgia", size: 13))
-                .foregroundColor(faded)
-                .italic()
+                .foregroundColor(theme.faded).italic()
                 .padding(10)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.black.opacity(0.06))
+                .background(theme.rowAlt)
 
-            Divider().background(faded)
+            Divider().background(theme.faded)
 
-            ViewThatFits(in: .horizontal) {
+            // On iPad always expand side-by-side; on iPhone use ViewThatFits
+            if isIpad {
                 HStack(alignment: .top, spacing: 0) {
-                    columnsRow(dividers: true)
+                    columnsContent(dividers: true)
                 }
-                VStack(alignment: .leading, spacing: 0) {
-                    columnsRow(dividers: false)
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: 0) {
+                        columnsContent(dividers: true)
+                    }
+                    VStack(alignment: .leading, spacing: 0) {
+                        columnsContent(dividers: false)
+                    }
                 }
             }
         }
-        .background(Color.white.opacity(0.3))
+        .background(theme.cardFill)
         .cornerRadius(8)
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(faded, lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(theme.cardStroke, lineWidth: 1))
     }
 
     @ViewBuilder
-    func columnsRow(dividers: Bool) -> some View {
+    func columnsContent(dividers: Bool) -> some View {
         ForEach(Array(entry.styles.enumerated()), id: \.element.id) { i, style in
-            if dividers && i > 0 { Divider().background(faded) }
-            else if !dividers && i > 0 { Divider().background(faded) }
+            if i > 0 { Divider().background(theme.faded) }
             translationColumn(style: style, text: entry.results[style.id] ?? "—")
         }
     }
@@ -322,20 +408,18 @@ struct ResultCard: View {
             HStack {
                 Text("\(style.emoji) \(style.label)")
                     .font(.custom("Georgia", size: 10))
-                    .kerning(1.5)
-                    .textCase(.uppercase)
-                    .foregroundColor(accent)
+                    .kerning(1.5).textCase(.uppercase)
+                    .foregroundColor(theme.accent)
                 Spacer()
                 Button(action: { UIPasteboard.general.string = text }) {
                     Image(systemName: "doc.on.doc")
                         .font(.system(size: 12))
-                        .foregroundColor(faded)
+                        .foregroundColor(theme.faded)
                 }
             }
             Text(text)
                 .font(.custom("Georgia", size: 15))
-                .foregroundColor(inkDark)
-                .italic()
+                .foregroundColor(theme.inkDark).italic()
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)
