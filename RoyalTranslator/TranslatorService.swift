@@ -31,10 +31,10 @@ class TranslatorService: ObservableObject {
     2. COURT_JESTER: Playful, entertaining, slightly dramatic German as a medieval court jester would speak. \
     Use archaic German flair and expressions like "Ei, ei!" but never use titles like "Euer Majestät".
 
-    3. ROYAL_DECREE: The King addressing his lowly subjects with maximum condescension and pomposity. \
+    3. ROYAL_DECREE: The King addressing his lowly subjects in German, with maximum condescension and pomposity. \
     Speak as an absolute monarch who cannot believe he must explain anything to such wretched, dim-witted \
-    commoners. Use imperious language, rhetorical disdain, and make clear that the listener is barely \
-    worthy of the King's words. English, grand and overbearing.
+    commoners. Use imperious, archaic German — grand, overbearing, dripping with disdain for the listener's \
+    unworthiness. Make clear they are barely fit to receive the King's words.
 
     Respond ONLY with a raw JSON object, no markdown, no backticks, no explanation:
     {"shakespearean": "...", "jester": "...", "royal": "..."}
