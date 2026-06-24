@@ -4,15 +4,8 @@ import Combine
 struct TranslationEntry: Identifiable {
     let id = UUID()
     let original: String
-    let shakespearean: String
-    let jester: String
-    let royal: String
-}
-
-private struct TranslationResponse: Decodable {
-    let shakespearean: String
-    let jester: String
-    let royal: String
+    let styles: [TranslationStyle]
+    let results: [String: String]
 }
 
 @MainActor
@@ -23,24 +16,8 @@ class TranslatorService: ObservableObject {
 
     var apiKey = ""
 
-    private let systemPrompt = """
-    You are a translator specializing in three styles. For every message provided, translate it into all three:
-
-    1. SHAKESPEAREAN: Early Modern English style with thee, thou, methinks, prithee, doth, hast, etc.
-
-    2. COURT_JESTER: Playful, entertaining, slightly dramatic German as a medieval court jester would speak. \
-    Use archaic German flair and expressions like "Ei, ei!" but never use titles like "Euer Majestät".
-
-    3. ROYAL_DECREE: The King addressing his lowly subjects in German, with maximum condescension and pomposity. \
-    Speak as an absolute monarch who cannot believe he must explain anything to such wretched, dim-witted \
-    commoners. Use imperious, archaic German — grand, overbearing, dripping with disdain for the listener's \
-    unworthiness. Make clear they are barely fit to receive the King's words.
-
-    Respond ONLY with a raw JSON object, no markdown, no backticks, no explanation:
-    {"shakespearean": "...", "jester": "...", "royal": "..."}
-    """
-
-    func translate(text: String) async {
+    func translate(text: String, styles: [TranslationStyle]) async {
+        guard !styles.isEmpty else { return }
         isLoading = true
         errorMessage = nil
 
@@ -52,9 +29,10 @@ class TranslatorService: ObservableObject {
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
 
+        let systemPrompt = buildPrompt(for: styles)
         let body: [String: Any] = [
             "model": "claude-sonnet-4-6",
-            "max_tokens": 1000,
+            "max_tokens": 200 * styles.count + 200,
             "system": systemPrompt,
             "messages": [["role": "user", "content": text]]
         ]
@@ -63,39 +41,33 @@ class TranslatorService: ObservableObject {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
             let (data, response) = try await URLSession.shared.data(for: request)
 
-            // Surface HTTP-level errors before attempting decode
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
-                let raw = String(data: data, encoding: .utf8) ?? "no body"
-                // Try to pull a message from Anthropic's error envelope
                 if let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                    let err = obj["error"] as? [String: Any],
                    let msg = err["message"] as? String {
                     errorMessage = "API error \(http.statusCode): \(msg)"
                 } else {
-                    errorMessage = "HTTP \(http.statusCode): \(raw.prefix(200))"
+                    errorMessage = "HTTP \(http.statusCode)"
                 }
                 isLoading = false
                 return
             }
 
-            // Parse Anthropic response envelope
             let envelope = try JSONDecoder().decode(AnthropicResponse.self, from: data)
-
             guard let rawText = envelope.content.first?.text else {
                 errorMessage = "Empty response from API"
                 isLoading = false
                 return
             }
 
-            // Extract JSON object from response
-            guard let jsonData = extractJSON(from: rawText) else {
-                errorMessage = "Could not find JSON in: \(rawText.prefix(100))"
+            guard let jsonData = extractJSON(from: rawText),
+                  let results = try? JSONSerialization.jsonObject(with: jsonData) as? [String: String] else {
+                errorMessage = "Could not parse response: \(rawText.prefix(120))"
                 isLoading = false
                 return
             }
 
-            let translation = try JSONDecoder().decode(TranslationResponse.self, from: jsonData)
-            let entry = TranslationEntry(original: text, shakespearean: translation.shakespearean, jester: translation.jester, royal: translation.royal)
+            let entry = TranslationEntry(original: text, styles: styles, results: results)
             history.insert(entry, at: 0)
             if history.count > 20 { history.removeLast() }
 
@@ -106,19 +78,29 @@ class TranslatorService: ObservableObject {
         isLoading = false
     }
 
+    private func buildPrompt(for styles: [TranslationStyle]) -> String {
+        let numbered = styles.enumerated().map { i, s in "\(i + 1). \(s.prompt)" }.joined(separator: "\n\n")
+        let keys = styles.map { "\"\($0.id)\": \"...\"" }.joined(separator: ", ")
+        return """
+        You are a translator specializing in multiple medieval and fantasy styles. \
+        For every message, translate it into each of the following styles:
+
+        \(numbered)
+
+        Respond ONLY with a raw JSON object, no markdown, no backticks, no explanation:
+        {\(keys)}
+        """
+    }
+
     private func extractJSON(from text: String) -> Data? {
-        // Find the first { and last } to extract JSON object
         guard let start = text.firstIndex(of: "{"),
               let end = text.lastIndex(of: "}") else { return nil }
-        let jsonString = String(text[start...end])
-        return jsonString.data(using: .utf8)
+        return String(text[start...end]).data(using: .utf8)
     }
 }
 
-// MARK: - Anthropic API Response Models
 private struct AnthropicResponse: Decodable {
     let content: [ContentBlock]
-
     struct ContentBlock: Decodable {
         let type: String
         let text: String?

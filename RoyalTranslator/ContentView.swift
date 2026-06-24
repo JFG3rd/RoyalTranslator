@@ -9,11 +9,19 @@ struct ContentView: View {
     @State private var showSettings = false
     @FocusState private var inputFocused: Bool
 
-    let inkDark = Color(red: 0.1, green: 0.07, blue: 0.035)
-    let vellum = Color(red: 0.96, green: 0.93, blue: 0.84)
+    @AppStorage("defaultStyleIDs") private var defaultStyleIDsRaw: String = TranslationStyle.defaultIDs.joined(separator: ",")
+
+    @State private var activeStyleIDs: Set<String> = TranslationStyle.defaultIDs
+
+    let inkDark   = Color(red: 0.1,  green: 0.07, blue: 0.035)
+    let vellum    = Color(red: 0.96, green: 0.93, blue: 0.84)
     let parchment = Color(red: 0.93, green: 0.88, blue: 0.72)
-    let accent = Color(red: 0.48, green: 0.23, blue: 0.12)
-    let faded = Color(red: 0.62, green: 0.55, blue: 0.43)
+    let accent    = Color(red: 0.48, green: 0.23, blue: 0.12)
+    let faded     = Color(red: 0.62, green: 0.55, blue: 0.43)
+
+    var defaultStyleIDs: Set<String> {
+        Set(defaultStyleIDsRaw.split(separator: ",").map(String.init))
+    }
 
     var body: some View {
         ZStack {
@@ -29,6 +37,7 @@ struct ContentView: View {
         .font(.custom("Georgia", size: 16))
         .foregroundColor(inkDark)
         .onAppear {
+            activeStyleIDs = defaultStyleIDs
             if let savedKey = KeychainHelper.load(), savedKey.hasPrefix("sk-") {
                 apiKey = savedKey
                 service.apiKey = savedKey
@@ -38,6 +47,7 @@ struct ContentView: View {
     }
 
     // MARK: - API Key Screen
+
     var keyEntryView: some View {
         VStack(spacing: 24) {
             VStack(spacing: 6) {
@@ -77,18 +87,14 @@ struct ContentView: View {
                             KeychainHelper.save(apiKey)
                         }
                     }
-
                     Button(action: { showAPIKey.toggle() }) {
                         Image(systemName: showAPIKey ? "eye.slash" : "eye")
                             .foregroundColor(faded)
                             .padding(.vertical, 10)
                             .padding(.trailing, 6)
                     }
-
                     Button(action: {
-                        if let str = UIPasteboard.general.string {
-                            apiKey = str
-                        }
+                        if let str = UIPasteboard.general.string { apiKey = str }
                     }) {
                         Image(systemName: "doc.on.clipboard")
                             .foregroundColor(faded)
@@ -128,9 +134,11 @@ struct ContentView: View {
     }
 
     // MARK: - Translator Screen
+
     var translatorView: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: 20) {
+
                 // Header
                 VStack(spacing: 4) {
                     Text("⚜️").font(.system(size: 36))
@@ -138,10 +146,6 @@ struct ContentView: View {
                         .font(.custom("Georgia", size: 24))
                         .fontWeight(.bold)
                         .foregroundColor(accent)
-                    Text("Shakespearean · Hofnarr · Royal Decree")
-                        .font(.custom("Georgia", size: 12))
-                        .foregroundColor(faded)
-                        .italic()
                     Button("Forget API Key") {
                         KeychainHelper.delete()
                         apiKey = ""
@@ -151,6 +155,9 @@ struct ContentView: View {
                     .foregroundColor(faded)
                 }
                 .padding(.top, 16)
+
+                // Style chips
+                styleChipsView
 
                 // Input card
                 VStack(alignment: .leading, spacing: 12) {
@@ -172,18 +179,15 @@ struct ContentView: View {
                         Spacer()
                         Button(action: translate) {
                             if service.isLoading {
-                                ProgressView()
-                                    .tint(vellum)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 8)
+                                ProgressView().tint(vellum)
+                                    .padding(.horizontal, 20).padding(.vertical, 8)
                             } else {
                                 Text("Translate")
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 20).padding(.vertical, 8)
                             }
                         }
-                        .disabled(service.isLoading || inputText.trimmingCharacters(in: .whitespaces).isEmpty)
-                        .background(service.isLoading || inputText.isEmpty ? faded : accent)
+                        .disabled(service.isLoading || inputText.trimmingCharacters(in: .whitespaces).isEmpty || activeStyleIDs.isEmpty)
+                        .background(service.isLoading || inputText.isEmpty || activeStyleIDs.isEmpty ? faded : accent)
                         .foregroundColor(vellum)
                         .cornerRadius(6)
                         .font(.custom("Georgia", size: 15))
@@ -194,7 +198,6 @@ struct ContentView: View {
                 .cornerRadius(8)
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(faded, lineWidth: 1))
 
-                // Error
                 if let error = service.errorMessage {
                     Text("⚠️ \(error)")
                         .font(.custom("Georgia", size: 13))
@@ -203,7 +206,6 @@ struct ContentView: View {
                         .multilineTextAlignment(.center)
                 }
 
-                // Results
                 ForEach(service.history) { entry in
                     ResultCard(entry: entry, accent: accent, faded: faded, inkDark: inkDark)
                 }
@@ -221,10 +223,44 @@ struct ContentView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView(
                 isPresented: $showSettings,
+                defaultStyleIDsRaw: $defaultStyleIDsRaw,
                 accent: accent, faded: faded,
                 vellum: vellum, inkDark: inkDark,
                 parchment: parchment
             )
+            .onDisappear { activeStyleIDs = defaultStyleIDs }
+        }
+    }
+
+    // MARK: - Style Chips
+
+    var styleChipsView: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(TranslationStyle.all) { style in
+                    let on = activeStyleIDs.contains(style.id)
+                    Button(action: {
+                        if on { activeStyleIDs.remove(style.id) }
+                        else  { activeStyleIDs.insert(style.id) }
+                    }) {
+                        HStack(spacing: 4) {
+                            Text(style.emoji).font(.system(size: 13))
+                            Text(style.label)
+                                .font(.custom("Georgia", size: 12))
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(on ? accent : Color.white.opacity(0.35))
+                        .foregroundColor(on ? vellum : faded)
+                        .cornerRadius(20)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(on ? accent : faded, lineWidth: 1)
+                        )
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
         }
     }
 
@@ -232,12 +268,14 @@ struct ContentView: View {
         let text = inputText.trimmingCharacters(in: .whitespaces)
         guard !text.isEmpty else { return }
         inputFocused = false
-        Task { await service.translate(text: text) }
+        let styles = TranslationStyle.all.filter { activeStyleIDs.contains($0.id) }
+        Task { await service.translate(text: text, styles: styles) }
         inputText = ""
     }
 }
 
 // MARK: - Result Card
+
 struct ResultCard: View {
     let entry: TranslationEntry
     let accent: Color
@@ -246,7 +284,6 @@ struct ResultCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Original
             Text("\"\(entry.original)\"")
                 .font(.custom("Georgia", size: 13))
                 .foregroundColor(faded)
@@ -257,21 +294,12 @@ struct ResultCard: View {
 
             Divider().background(faded)
 
-            // Three columns on wide iPad, stacked on iPhone
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .top, spacing: 0) {
-                    translationColumn(label: "⚜ Shakespearean", text: entry.shakespearean)
-                    Divider().background(faded)
-                    translationColumn(label: "🃏 Hofnarr", text: entry.jester)
-                    Divider().background(faded)
-                    translationColumn(label: "👑 Royal Decree", text: entry.royal)
+                    columnsRow(dividers: true)
                 }
                 VStack(alignment: .leading, spacing: 0) {
-                    translationColumn(label: "⚜ Shakespearean", text: entry.shakespearean)
-                    Divider().background(faded)
-                    translationColumn(label: "🃏 Hofnarr", text: entry.jester)
-                    Divider().background(faded)
-                    translationColumn(label: "👑 Royal Decree", text: entry.royal)
+                    columnsRow(dividers: false)
                 }
             }
         }
@@ -280,10 +308,19 @@ struct ResultCard: View {
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(faded, lineWidth: 1))
     }
 
-    func translationColumn(label: String, text: String) -> some View {
+    @ViewBuilder
+    func columnsRow(dividers: Bool) -> some View {
+        ForEach(Array(entry.styles.enumerated()), id: \.element.id) { i, style in
+            if dividers && i > 0 { Divider().background(faded) }
+            else if !dividers && i > 0 { Divider().background(faded) }
+            translationColumn(style: style, text: entry.results[style.id] ?? "—")
+        }
+    }
+
+    func translationColumn(style: TranslationStyle, text: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(label)
+                Text("\(style.emoji) \(style.label)")
                     .font(.custom("Georgia", size: 10))
                     .kerning(1.5)
                     .textCase(.uppercase)
