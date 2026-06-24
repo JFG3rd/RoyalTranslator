@@ -46,7 +46,7 @@ struct ContentView: View {
                     .font(.custom("Georgia", size: 26))
                     .fontWeight(.bold)
                     .foregroundColor(accent)
-                Text("Shakespearean · Court Jester German")
+                Text("Shakespearean · Hofnarr · Royal Decree")
                     .font(.custom("Georgia", size: 13))
                     .foregroundColor(faded)
                     .italic()
@@ -138,7 +138,7 @@ struct ContentView: View {
                         .font(.custom("Georgia", size: 24))
                         .fontWeight(.bold)
                         .foregroundColor(accent)
-                    Text("Shakespearean · Court Jester German")
+                    Text("Shakespearean · Hofnarr · Royal Decree")
                         .font(.custom("Georgia", size: 12))
                         .foregroundColor(faded)
                         .italic()
@@ -257,17 +257,21 @@ struct ResultCard: View {
 
             Divider().background(faded)
 
-            // Two columns on iPad, stacked on iPhone
+            // Three columns on wide iPad, stacked on iPhone
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .top, spacing: 0) {
                     translationColumn(label: "⚜ Shakespearean", text: entry.shakespearean)
                     Divider().background(faded)
                     translationColumn(label: "🃏 Hofnarr", text: entry.jester)
+                    Divider().background(faded)
+                    translationColumn(label: "👑 Royal Decree", text: entry.royal)
                 }
                 VStack(alignment: .leading, spacing: 0) {
                     translationColumn(label: "⚜ Shakespearean", text: entry.shakespearean)
                     Divider().background(faded)
                     translationColumn(label: "🃏 Hofnarr", text: entry.jester)
+                    Divider().background(faded)
+                    translationColumn(label: "👑 Royal Decree", text: entry.royal)
                 }
             }
         }

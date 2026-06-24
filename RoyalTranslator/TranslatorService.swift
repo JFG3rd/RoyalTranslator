@@ -6,11 +6,13 @@ struct TranslationEntry: Identifiable {
     let original: String
     let shakespearean: String
     let jester: String
+    let royal: String
 }
 
 private struct TranslationResponse: Decodable {
     let shakespearean: String
     let jester: String
+    let royal: String
 }
 
 @MainActor
@@ -22,15 +24,20 @@ class TranslatorService: ObservableObject {
     var apiKey = ""
 
     private let systemPrompt = """
-    You are a translator specializing in two styles. For every message provided, translate it into both:
+    You are a translator specializing in three styles. For every message provided, translate it into all three:
 
     1. SHAKESPEAREAN: Early Modern English style with thee, thou, methinks, prithee, doth, hast, etc.
 
     2. COURT_JESTER: Playful, entertaining, slightly dramatic German as a medieval court jester would speak. \
     Use archaic German flair and expressions like "Ei, ei!" but never use titles like "Euer Majestät".
 
+    3. ROYAL_DECREE: The King addressing his lowly subjects with maximum condescension and pomposity. \
+    Speak as an absolute monarch who cannot believe he must explain anything to such wretched, dim-witted \
+    commoners. Use imperious language, rhetorical disdain, and make clear that the listener is barely \
+    worthy of the King's words. English, grand and overbearing.
+
     Respond ONLY with a raw JSON object, no markdown, no backticks, no explanation:
-    {"shakespearean": "...", "jester": "..."}
+    {"shakespearean": "...", "jester": "...", "royal": "..."}
     """
 
     func translate(text: String) async {
@@ -88,7 +95,7 @@ class TranslatorService: ObservableObject {
             }
 
             let translation = try JSONDecoder().decode(TranslationResponse.self, from: jsonData)
-            let entry = TranslationEntry(original: text, shakespearean: translation.shakespearean, jester: translation.jester)
+            let entry = TranslationEntry(original: text, shakespearean: translation.shakespearean, jester: translation.jester, royal: translation.royal)
             history.insert(entry, at: 0)
             if history.count > 20 { history.removeLast() }
 
