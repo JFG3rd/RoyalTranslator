@@ -278,11 +278,19 @@ struct ResultCard: View {
 
     func translationColumn(label: String, text: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.custom("Georgia", size: 10))
-                .kerning(1.5)
-                .textCase(.uppercase)
-                .foregroundColor(accent)
+            HStack {
+                Text(label)
+                    .font(.custom("Georgia", size: 10))
+                    .kerning(1.5)
+                    .textCase(.uppercase)
+                    .foregroundColor(accent)
+                Spacer()
+                Button(action: { UIPasteboard.general.string = text }) {
+                    Image(systemName: "doc.on.doc")
+                        .font(.system(size: 12))
+                        .foregroundColor(faded)
+                }
+            }
             Text(text)
                 .font(.custom("Georgia", size: 15))
                 .foregroundColor(inkDark)
