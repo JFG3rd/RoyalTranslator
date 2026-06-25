@@ -3,7 +3,7 @@ import SwiftUI
 
 // MARK: - Filter Enums
 
-enum FilterLanguage: String, CaseIterable, Identifiable {
+enum FilterLanguage: String, CaseIterable, Identifiable, Codable {
     case all, english, german
     var id: String { rawValue }
     var emoji: String { switch self { case .all: "🌍"; case .english: "🇬🇧"; case .german: "🇩🇪" } }
@@ -12,7 +12,7 @@ enum FilterLanguage: String, CaseIterable, Identifiable {
     }
 }
 
-enum FilterGender: String, CaseIterable, Identifiable {
+enum FilterGender: String, CaseIterable, Identifiable, Codable {
     case all, men, women
     var id: String { rawValue }
     var emoji: String { switch self { case .all: "👥"; case .men: "♂"; case .women: "♀" } }
@@ -21,7 +21,7 @@ enum FilterGender: String, CaseIterable, Identifiable {
     }
 }
 
-enum FilterCategory: String, CaseIterable, Identifiable {
+enum FilterCategory: String, CaseIterable, Identifiable, Codable {
     case all, royalty, court, commonFolk, mystic, clergy
     var id: String { rawValue }
     var emoji: String {
@@ -40,7 +40,7 @@ enum FilterCategory: String, CaseIterable, Identifiable {
 
 // MARK: - Style Model
 
-struct TranslationStyle: Identifiable, Hashable {
+struct TranslationStyle: Identifiable, Hashable, Codable {
     let id: String
     let emoji: String
     let label: String

@@ -7,6 +7,8 @@ struct ContentView: View {
     @State private var apiKeySet = false
     @State private var showAPIKey = false
     @State private var showSettings = false
+    @State private var translateDidSucceed = false
+    @State private var showFavoritesOnly = false
     @FocusState private var inputFocused: Bool
 
     @AppStorage("defaultStyleIDs") private var defaultStyleIDsRaw: String =
@@ -31,6 +33,12 @@ struct ContentView: View {
         TranslationStyle.all.filter {
             $0.matches(language: filterLanguage, gender: filterGender, category: filterCategory)
         }
+    }
+
+    var displayedHistory: [TranslationEntry] {
+        showFavoritesOnly
+            ? service.history.filter { service.favoritedIDs.contains($0.id) }
+            : service.history
     }
 
     var body: some View {
@@ -61,7 +69,6 @@ struct ContentView: View {
     // MARK: - Settings bundle integration
 
     private func handleSettingsBundleFlags() {
-        // Register defaults so the toggle starts false when first installed
         UserDefaults.standard.register(defaults: ["clear_api_key": false])
         if UserDefaults.standard.bool(forKey: "clear_api_key") {
             KeychainHelper.delete()
@@ -154,72 +161,122 @@ struct ContentView: View {
     // MARK: - Translator Screen
 
     var translatorView: some View {
-        ScrollView {
-            VStack(spacing: 20) {
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: 20) {
 
-                // Header
-                VStack(spacing: 4) {
-                    Text("⚜️").font(.system(size: isIpad ? 44 : 36))
-                    Text("app_title")
-                        .font(.custom("Georgia", size: isIpad ? 30 : 24)).fontWeight(.bold)
-                        .foregroundColor(theme.accent)
-                    Button(action: { KeychainHelper.delete(); apiKey = ""; apiKeySet = false }) {
-                        Text("forget_api_key")
-                            .font(.custom("Georgia", size: 11)).foregroundColor(theme.faded)
-                    }
-                }
-                .padding(.top, 16)
-
-                // Filter chips
-                filterChipsView
-
-                Divider().background(theme.faded.opacity(0.4))
-
-                // Style chips
-                styleChipsView
-
-                // Input card
-                inputCard
-
-                // Error
-                if let error = service.errorMessage {
-                    Text("⚠️ \(error)")
-                        .font(.custom("Georgia", size: 13))
-                        .foregroundColor(theme.accent).italic()
-                        .multilineTextAlignment(.center)
-                }
-
-                // Results — 2-column grid on iPad
-                if isIpad {
-                    let columns = [GridItem(.flexible()), GridItem(.flexible())]
-                    LazyVGrid(columns: columns, spacing: 16) {
-                        ForEach(service.history) { entry in
-                            ResultCard(entry: entry, theme: theme, isIpad: isIpad)
+                    // Header
+                    VStack(spacing: 4) {
+                        Text("⚜️").font(.system(size: isIpad ? 44 : 36))
+                        Text("app_title")
+                            .font(.custom("Georgia", size: isIpad ? 30 : 24)).fontWeight(.bold)
+                            .foregroundColor(theme.accent)
+                        Button(action: { KeychainHelper.delete(); apiKey = ""; apiKeySet = false }) {
+                            Text("forget_api_key")
+                                .font(.custom("Georgia", size: 11)).foregroundColor(theme.faded)
                         }
                     }
-                } else {
-                    ForEach(service.history) { entry in
-                        ResultCard(entry: entry, theme: theme, isIpad: isIpad)
+                    .padding(.top, 16)
+
+                    // Filter chips
+                    filterChipsView
+
+                    Divider().background(theme.faded.opacity(0.4))
+
+                    // Style chips
+                    styleChipsView
+
+                    // Input card — anchor for scroll-to
+                    inputCard
+                        .id("inputCard")
+
+                    // Error
+                    if let error = service.errorMessage {
+                        Text("⚠️ \(error)")
+                            .font(.custom("Georgia", size: 13))
+                            .foregroundColor(theme.accent).italic()
+                            .multilineTextAlignment(.center)
+                    }
+
+                    // Favorites toggle
+                    if !service.history.isEmpty {
+                        HStack {
+                            Button(action: { withAnimation(.easeInOut(duration: 0.2)) { showFavoritesOnly.toggle() } }) {
+                                HStack(spacing: 5) {
+                                    Image(systemName: showFavoritesOnly ? "heart.fill" : "heart")
+                                    Text(showFavoritesOnly ? LocalizedStringKey("filter_all") : "♥")
+                                }
+                                .font(.custom("Georgia", size: 12))
+                                .padding(.horizontal, 12).padding(.vertical, 6)
+                                .background(showFavoritesOnly ? theme.accent.opacity(0.15) : theme.chipOff)
+                                .foregroundColor(showFavoritesOnly ? theme.accent : theme.faded)
+                                .cornerRadius(20)
+                                .overlay(RoundedRectangle(cornerRadius: 20)
+                                    .stroke(showFavoritesOnly ? theme.accent : theme.faded.opacity(0.5), lineWidth: 1))
+                            }
+                            Spacer()
+                            Text("\(displayedHistory.count)")
+                                .font(.custom("Georgia", size: 11))
+                                .foregroundColor(theme.faded)
+                        }
+                    }
+
+                    // Results — 2-column grid on iPad
+                    if isIpad {
+                        let columns = [GridItem(.flexible()), GridItem(.flexible())]
+                        LazyVGrid(columns: columns, spacing: 16) {
+                            ForEach(displayedHistory) { entry in
+                                ResultCard(
+                                    entry: entry,
+                                    theme: theme,
+                                    isIpad: isIpad,
+                                    isFavorited: service.favoritedIDs.contains(entry.id),
+                                    onTapOriginal: { text in repopulate(text, proxy: proxy) },
+                                    onToggleFavorite: { service.toggleFavorite(entry.id) }
+                                )
+                            }
+                        }
+                    } else {
+                        ForEach(displayedHistory) { entry in
+                            ResultCard(
+                                entry: entry,
+                                theme: theme,
+                                isIpad: isIpad,
+                                isFavorited: service.favoritedIDs.contains(entry.id),
+                                onTapOriginal: { text in repopulate(text, proxy: proxy) },
+                                onToggleFavorite: { service.toggleFavorite(entry.id) }
+                            )
+                        }
                     }
                 }
+                .padding(isIpad ? 24 : 16)
             }
-            .padding(isIpad ? 24 : 16)
-        }
-        .overlay(alignment: .topTrailing) {
-            Button(action: { showSettings = true }) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 18))
-                    .foregroundColor(theme.faded)
-                    .padding(16)
+            .overlay(alignment: .topTrailing) {
+                Button(action: { showSettings = true }) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 18))
+                        .foregroundColor(theme.faded)
+                        .padding(16)
+                }
+            }
+            .sheet(isPresented: $showSettings) {
+                SettingsView(
+                    isPresented: $showSettings,
+                    defaultStyleIDsRaw: $defaultStyleIDsRaw,
+                    theme: theme
+                )
+                .onDisappear { activeStyleIDs = defaultStyleIDs }
             }
         }
-        .sheet(isPresented: $showSettings) {
-            SettingsView(
-                isPresented: $showSettings,
-                defaultStyleIDsRaw: $defaultStyleIDsRaw,
-                theme: theme
-            )
-            .onDisappear { activeStyleIDs = defaultStyleIDs }
+    }
+
+    private func repopulate(_ text: String, proxy: ScrollViewProxy) {
+        inputText = text
+        withAnimation(.easeInOut(duration: 0.35)) {
+            proxy.scrollTo("inputCard", anchor: .top)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            inputFocused = true
         }
     }
 
@@ -336,19 +393,23 @@ struct ContentView: View {
                     .foregroundColor(theme.faded).italic()
                 Spacer()
                 Button(action: translate) {
-                    if service.isLoading {
-                        ProgressView().tint(theme.bg1)
-                            .padding(.horizontal, 20).padding(.vertical, 8)
-                    } else {
-                        Text("translate")
-                            .padding(.horizontal, 20).padding(.vertical, 8)
+                    Group {
+                        if service.isLoading {
+                            ProgressView().tint(theme.bg1)
+                        } else if translateDidSucceed {
+                            Image(systemName: "checkmark")
+                        } else {
+                            Text("translate")
+                        }
                     }
+                    .padding(.horizontal, 20).padding(.vertical, 8)
                 }
                 .disabled(!canTranslate)
-                .background(canTranslate ? theme.accent : theme.faded)
+                .background(translateDidSucceed ? theme.accent.opacity(0.7) : (canTranslate ? theme.accent : theme.faded))
                 .foregroundColor(theme.bg1)
                 .cornerRadius(6)
                 .font(.custom("Georgia", size: 15))
+                .animation(.spring(response: 0.25, dampingFraction: 0.6), value: translateDidSucceed)
             }
         }
         .padding(16)
@@ -368,8 +429,16 @@ struct ContentView: View {
         guard !text.isEmpty else { return }
         inputFocused = false
         let styles = TranslationStyle.all.filter { activeStyleIDs.contains($0.id) }
-        Task { await service.translate(text: text, styles: styles) }
-        inputText = ""
+        Task {
+            await service.translate(text: text, styles: styles)
+            if service.errorMessage == nil {
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) {
+                    translateDidSucceed = true
+                }
+                try? await Task.sleep(nanoseconds: 1_200_000_000)
+                withAnimation { translateDidSucceed = false }
+            }
+        }
     }
 }
 
@@ -379,22 +448,67 @@ struct ResultCard: View {
     let entry: TranslationEntry
     let theme: AppTheme
     let isIpad: Bool
+    var isFavorited: Bool = false
+    var onTapOriginal: ((String) -> Void)? = nil
+    var onToggleFavorite: (() -> Void)? = nil
+
+    @State private var headerTapped = false
+    @State private var heartScale: CGFloat = 1.0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+
+            // Original text header — tappable to repopulate input
             Text("\"\(entry.original)\"")
                 .font(.custom("Georgia", size: 13))
                 .foregroundColor(theme.faded).italic()
-                .padding(10)
+                .padding(.vertical, 10)
+                .padding(.leading, 10)
+                .padding(.trailing, 70)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(theme.rowAlt)
+                .background(headerTapped ? theme.accent.opacity(0.18) : theme.rowAlt)
+                .animation(.easeOut(duration: 0.25), value: headerTapped)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    guard onTapOriginal != nil else { return }
+                    withAnimation(.easeIn(duration: 0.1)) { headerTapped = true }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        withAnimation(.easeOut(duration: 0.2)) { headerTapped = false }
+                    }
+                    onTapOriginal?(entry.original)
+                }
+                .overlay(alignment: .trailing) {
+                    HStack(spacing: 10) {
+                        // Tap-to-edit hint
+                        if onTapOriginal != nil {
+                            Image(systemName: "arrow.uturn.left")
+                                .font(.system(size: 10))
+                                .foregroundColor(theme.faded.opacity(0.5))
+                        }
+                        // Heart / favorite button
+                        Button(action: {
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.4)) {
+                                heartScale = 1.45
+                            }
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.55).delay(0.15)) {
+                                heartScale = 1.0
+                            }
+                            onToggleFavorite?()
+                        }) {
+                            Image(systemName: isFavorited ? "heart.fill" : "heart")
+                                .font(.system(size: 14))
+                                .foregroundColor(isFavorited ? theme.accent : theme.faded.opacity(0.55))
+                                .scaleEffect(heartScale)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.trailing, 10)
+                }
 
             Divider().background(theme.faded)
 
             if isIpad {
-                HStack(alignment: .top, spacing: 0) {
-                    columnsContent
-                }
+                HStack(alignment: .top, spacing: 0) { columnsContent }
             } else {
                 ViewThatFits(in: .horizontal) {
                     HStack(alignment: .top, spacing: 0) { columnsContent }
