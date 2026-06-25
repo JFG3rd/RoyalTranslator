@@ -7,8 +7,9 @@
 "APP_VERSION_TITLE"   = "Version";
 
 /* API Key */
-"CLEAR_API_KEY_TITLE" = "Clear saved API key on next launch";
-"API_KEY_FOOTER"      = "Your API key is stored in the secure device Keychain and is never sent anywhere except directly to Anthropic.";
+"PERSIST_API_KEY_TITLE" = "Keep API key if app is deleted";
+"CLEAR_API_KEY_TITLE"   = "Clear saved API key on next launch";
+"API_KEY_FOOTER"        = "Your API key is stored in the secure device Keychain. By default it is wiped if you reinstall the app. Enable \"Keep API key\" to preserve it across reinstalls.";
 
 /* Privacy */
 "PRIVACY_FOOTER"      = "The Royal Translator sends your input text to Anthropic's Claude API to generate translations. No data is stored on external servers beyond what Anthropic retains per their privacy policy.";

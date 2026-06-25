@@ -29,6 +29,12 @@
         </dict>
         <dict>
             <key>Type</key>            <string>PSToggleSwitchSpecifier</string>
+            <key>Title</key>           <string>PERSIST_API_KEY_TITLE</string>
+            <key>Key</key>             <string>persist_api_key</string>
+            <key>DefaultValue</key>    <false/>
+        </dict>
+        <dict>
+            <key>Type</key>            <string>PSToggleSwitchSpecifier</string>
             <key>Title</key>           <string>CLEAR_API_KEY_TITLE</string>
             <key>Key</key>             <string>clear_api_key</string>
             <key>DefaultValue</key>    <false/>

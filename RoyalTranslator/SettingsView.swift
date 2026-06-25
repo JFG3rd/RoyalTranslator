@@ -7,6 +7,7 @@ struct SettingsView: View {
 
     @State private var currentIcon: String? = UIApplication.shared.alternateIconName
     @State private var expandedCategory: FilterCategory? = nil
+    @AppStorage("persist_api_key") private var persistAPIKey = false
 
     var defaultStyleIDs: Set<String> {
         Set(defaultStyleIDsRaw.split(separator: ",").map(String.init))
@@ -43,6 +44,23 @@ struct SettingsView: View {
                         ForEach(FilterCategory.allCases.filter { $0 != .all }) { category in
                             categorySection(category)
                         }
+                    }
+                    .settingsCard(theme: theme)
+
+                    // API Key
+                    VStack(alignment: .leading, spacing: 12) {
+                        sectionHeader("API_KEY_GROUP")
+                        Toggle(isOn: $persistAPIKey) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("PERSIST_API_KEY_TITLE")
+                                    .font(.custom("Georgia", size: 14))
+                                    .foregroundColor(theme.inkDark)
+                                Text(persistAPIKey ? "persist_api_key_on_hint" : "persist_api_key_off_hint")
+                                    .font(.custom("Georgia", size: 11))
+                                    .foregroundColor(theme.faded)
+                            }
+                        }
+                        .tint(theme.accent)
                     }
                     .settingsCard(theme: theme)
 

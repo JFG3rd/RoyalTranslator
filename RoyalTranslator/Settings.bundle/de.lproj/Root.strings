@@ -7,8 +7,9 @@
 "APP_VERSION_TITLE"   = "Version";
 
 /* API-Schlüssel */
-"CLEAR_API_KEY_TITLE" = "Gespeicherten API-Schlüssel beim nächsten Start löschen";
-"API_KEY_FOOTER"      = "Dein API-Schlüssel wird im sicheren Geräteschlüsselbund gespeichert und nur direkt an Anthropic übertragen.";
+"PERSIST_API_KEY_TITLE" = "API-Schlüssel bei App-Löschung behalten";
+"CLEAR_API_KEY_TITLE"   = "Gespeicherten API-Schlüssel beim nächsten Start löschen";
+"API_KEY_FOOTER"        = "Dein API-Schlüssel wird im sicheren Geräteschlüsselbund gespeichert. Standardmäßig wird er bei einer Neuinstallation gelöscht. Aktiviere \"API-Schlüssel behalten\", um ihn über Neuinstallationen hinaus zu bewahren.";
 
 /* Datenschutz */
 "PRIVACY_FOOTER"      = "Der Königliche Übersetzer sendet deinen Text an Anthropics Claude-API, um Übersetzungen zu erstellen. Es werden keine Daten auf externen Servern gespeichert, außer was Anthropic gemäß ihrer Datenschutzrichtlinie verarbeitet.";

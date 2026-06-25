@@ -11,11 +11,17 @@ enum KeychainHelper {
     // iOS does not delete Keychain items when the app is deleted — they survive
     // reinstallation. We detect a fresh install via a UserDefaults sentinel: if
     // the flag is absent this is either the very first install or a reinstall
-    // after deletion, so we proactively wipe any lingering key before use.
+    // after deletion.
+    //
+    // If the user has opted in to persistence (persist_api_key == true in
+    // UserDefaults, set via the in-app toggle or iOS Settings), we skip the
+    // wipe so their key survives reinstallation. Otherwise we delete it.
 
     static func wipeIfReinstalled() {
         guard !UserDefaults.standard.bool(forKey: installKey) else { return }
-        delete()
+        // First run after a fresh install or reinstall
+        let userWantsPersistence = UserDefaults.standard.bool(forKey: "persist_api_key")
+        if !userWantsPersistence { delete() }
         UserDefaults.standard.set(true, forKey: installKey)
     }
 
