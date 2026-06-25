@@ -169,6 +169,12 @@
         }
       }
     },
+    "FONT_SIZE_GROUP" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Font Size" } },
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Schriftgröße" } }
+      }
+    },
     "API_KEY_GROUP" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "API Key" } },

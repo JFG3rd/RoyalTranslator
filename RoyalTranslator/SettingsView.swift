@@ -8,10 +8,14 @@ struct SettingsView: View {
     @State private var currentIcon: String? = UIApplication.shared.alternateIconName
     @State private var expandedCategory: FilterCategory? = nil
     @AppStorage("persist_api_key") private var persistAPIKey = false
+    @AppStorage("fontSizeBase") private var fontSizeBase: Double = 17
 
     var defaultStyleIDs: Set<String> {
         Set(defaultStyleIDsRaw.split(separator: ",").map(String.init))
     }
+
+    // Live theme that reflects slider changes immediately
+    var liveTheme: AppTheme { AppTheme(scheme: theme.scheme, base: CGFloat(fontSizeBase)) }
 
     var body: some View {
         ZStack {
@@ -25,27 +29,49 @@ struct SettingsView: View {
                     // Header
                     HStack {
                         Text("settings")
-                            .font(.custom("Georgia", size: 22)).fontWeight(.bold)
-                            .foregroundColor(theme.accent)
+                            .font(.custom("Georgia", size: liveTheme.scaled(22))).fontWeight(.bold)
+                            .foregroundColor(liveTheme.accent)
                         Spacer()
                         Button(action: { isPresented = false }) {
                             Image(systemName: "xmark")
-                                .foregroundColor(theme.faded).font(.system(size: 18))
+                                .foregroundColor(liveTheme.faded).font(.system(size: liveTheme.scaled(18)))
                         }
                     }
+
+                    // Font Size
+                    VStack(alignment: .leading, spacing: 16) {
+                        sectionHeader("FONT_SIZE_GROUP")
+                        VStack(spacing: 10) {
+                            HStack {
+                                Text("A").font(.custom("Georgia", size: 13)).foregroundColor(liveTheme.faded)
+                                Slider(
+                                    value: $fontSizeBase,
+                                    in: 13...23,
+                                    step: 1
+                                )
+                                .tint(liveTheme.accent)
+                                Text("A").font(.custom("Georgia", size: 21)).foregroundColor(liveTheme.faded)
+                            }
+                            Text(fontSizeSampleText)
+                                .font(.custom("Georgia", size: liveTheme.scaled(15)))
+                                .foregroundColor(liveTheme.inkDark).italic()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                    .settingsCard(theme: liveTheme)
 
                     // Default Styles
                     VStack(alignment: .leading, spacing: 16) {
                         sectionHeader("default_styles")
                         Text("default_styles_hint")
-                            .font(.custom("Georgia", size: 12))
-                            .foregroundColor(theme.faded).italic()
+                            .font(.custom("Georgia", size: liveTheme.scaled(12)))
+                            .foregroundColor(liveTheme.faded).italic()
 
                         ForEach(FilterCategory.allCases.filter { $0 != .all }) { category in
                             categorySection(category)
                         }
                     }
-                    .settingsCard(theme: theme)
+                    .settingsCard(theme: liveTheme)
 
                     // API Key
                     VStack(alignment: .leading, spacing: 12) {
@@ -53,34 +79,38 @@ struct SettingsView: View {
                         Toggle(isOn: $persistAPIKey) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("PERSIST_API_KEY_TITLE")
-                                    .font(.custom("Georgia", size: 14))
-                                    .foregroundColor(theme.inkDark)
+                                    .font(.custom("Georgia", size: liveTheme.scaled(14)))
+                                    .foregroundColor(liveTheme.inkDark)
                                 Text(persistAPIKey ? "persist_api_key_on_hint" : "persist_api_key_off_hint")
-                                    .font(.custom("Georgia", size: 11))
-                                    .foregroundColor(theme.faded)
+                                    .font(.custom("Georgia", size: liveTheme.scaled(11)))
+                                    .foregroundColor(liveTheme.faded)
                             }
                         }
-                        .tint(theme.accent)
+                        .tint(liveTheme.accent)
                     }
-                    .settingsCard(theme: theme)
+                    .settingsCard(theme: liveTheme)
 
                     // App Icon
                     VStack(alignment: .leading, spacing: 16) {
                         sectionHeader("app_icon")
                         HStack(spacing: 20) {
                             IconChoice(labelKey: "royal", imageName: "AppIconLight",
-                                       isSelected: currentIcon == nil, theme: theme) { setIcon(nil) }
+                                       isSelected: currentIcon == nil, theme: liveTheme) { setIcon(nil) }
                             IconChoice(labelKey: "dark", imageName: "AppIconDark_120",
-                                       isSelected: currentIcon == "AppIconDark", theme: theme) { setIcon("AppIconDark") }
+                                       isSelected: currentIcon == "AppIconDark", theme: liveTheme) { setIcon("AppIconDark") }
                         }
                     }
-                    .settingsCard(theme: theme)
+                    .settingsCard(theme: liveTheme)
                 }
                 .padding(24)
             }
         }
-        .font(.custom("Georgia", size: 16))
-        .foregroundColor(theme.inkDark)
+        .font(.custom("Georgia", size: liveTheme.scaled(16)))
+        .foregroundColor(liveTheme.inkDark)
+    }
+
+    private var fontSizeSampleText: String {
+        "\(Int(fontSizeBase))pt · " + String(localized: "app_subtitle")
     }
 
     // MARK: - Category Section
@@ -91,7 +121,6 @@ struct SettingsView: View {
         let isExpanded = expandedCategory == category
 
         return VStack(spacing: 0) {
-            // Section header row
             Button(action: {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     expandedCategory = isExpanded ? nil : category
@@ -100,23 +129,23 @@ struct SettingsView: View {
                 HStack {
                     Text(category.emoji)
                     Text(category.locKey)
-                        .font(.custom("Georgia", size: 15))
-                        .foregroundColor(theme.inkDark)
+                        .font(.custom("Georgia", size: liveTheme.scaled(15)))
+                        .foregroundColor(liveTheme.inkDark)
                     Spacer()
                     if onCount > 0 {
                         Text("\(onCount) on")
-                            .font(.custom("Georgia", size: 11))
-                            .foregroundColor(theme.accent)
+                            .font(.custom("Georgia", size: liveTheme.scaled(11)))
+                            .foregroundColor(liveTheme.accent)
                     }
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 12))
-                        .foregroundColor(theme.faded)
+                        .font(.system(size: liveTheme.scaled(12)))
+                        .foregroundColor(liveTheme.faded)
                 }
                 .padding(.vertical, 8)
             }
 
             if isExpanded {
-                Divider().background(theme.faded.opacity(0.4))
+                Divider().background(liveTheme.faded.opacity(0.4))
                 VStack(spacing: 0) {
                     ForEach(styles) { style in
                         let isOn = defaultStyleIDs.contains(style.id)
@@ -132,22 +161,22 @@ struct SettingsView: View {
                                 Text(style.emoji)
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(style.label)
-                                        .font(.custom("Georgia", size: 14))
-                                        .foregroundColor(theme.inkDark)
+                                        .font(.custom("Georgia", size: liveTheme.scaled(14)))
+                                        .foregroundColor(liveTheme.inkDark)
                                     HStack(spacing: 2) {
                                         Text(style.language.locKey)
                                         Text("·")
                                         Text(style.gender.locKey)
                                     }
-                                    .font(.custom("Georgia", size: 10))
-                                    .foregroundColor(theme.faded)
+                                    .font(.custom("Georgia", size: liveTheme.scaled(10)))
+                                    .foregroundColor(liveTheme.faded)
                                 }
                             }
                         }
-                        .tint(theme.accent)
+                        .tint(liveTheme.accent)
                         .padding(.vertical, 6)
                         if style.id != styles.last?.id {
-                            Divider().background(theme.faded.opacity(0.2))
+                            Divider().background(liveTheme.faded.opacity(0.2))
                         }
                     }
                 }
@@ -155,15 +184,15 @@ struct SettingsView: View {
             }
         }
         .padding(.horizontal, 4)
-        .background(theme.cardFill.opacity(0.5))
+        .background(liveTheme.cardFill.opacity(0.5))
         .cornerRadius(6)
     }
 
     func sectionHeader(_ key: LocalizedStringKey) -> some View {
         Text(key)
-            .font(.custom("Georgia", size: 13))
+            .font(.custom("Georgia", size: liveTheme.scaled(13)))
             .kerning(1.5).textCase(.uppercase)
-            .foregroundColor(theme.faded)
+            .foregroundColor(liveTheme.faded)
     }
 
     private func setIcon(_ name: String?) {
@@ -196,7 +225,7 @@ struct IconChoice: View {
                         .fill(Color.gray.opacity(0.3)).frame(width: 80, height: 80)
                 }
                 Text(labelKey)
-                    .font(.custom("Georgia", size: 13))
+                    .font(.custom("Georgia", size: theme.scaled(13)))
                     .foregroundColor(isSelected ? theme.accent : theme.faded)
             }
         }

@@ -7,6 +7,20 @@
     <key>PreferenceSpecifiers</key>
     <array>
 
+        <!-- Font Size -->
+        <dict>
+            <key>Type</key>            <string>PSGroupSpecifier</string>
+            <key>Title</key>           <string>FONT_SIZE_GROUP</string>
+            <key>FooterText</key>      <string>FONT_SIZE_FOOTER</string>
+        </dict>
+        <dict>
+            <key>Type</key>            <string>PSSliderSpecifier</string>
+            <key>Key</key>             <string>fontSizeBase</string>
+            <key>DefaultValue</key>    <real>17</real>
+            <key>MinimumValue</key>    <real>13</real>
+            <key>MaximumValue</key>    <real>23</real>
+        </dict>
+
         <!-- About -->
         <dict>
             <key>Type</key>            <string>PSGroupSpecifier</string>

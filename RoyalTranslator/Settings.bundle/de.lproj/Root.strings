@@ -1,7 +1,11 @@
 /* Gruppenüberschriften */
+"FONT_SIZE_GROUP"     = "Schriftgröße";
 "ABOUT_GROUP"         = "Über die App";
 "API_KEY_GROUP"       = "API-Schlüssel";
 "PRIVACY_GROUP"       = "Datenschutz";
+
+/* Schriftgröße */
+"FONT_SIZE_FOOTER"    = "Passt die Textgröße in der gesamten App an. Der App-Titel bleibt immer fest. Standard ist 17pt.";
 
 /* Über die App */
 "APP_VERSION_TITLE"   = "Version";

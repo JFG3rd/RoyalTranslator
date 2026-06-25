@@ -2,10 +2,28 @@ import SwiftUI
 
 struct AppTheme {
     let scheme: ColorScheme
+    // Default 17 = original 16 + the requested +1.
+    // The slider stores the user's chosen value; scaled() shifts every
+    // content font by (base - 16) so the default is already +1.
+    let base: CGFloat
+
+    init(scheme: ColorScheme, base: CGFloat = 17) {
+        self.scheme = scheme
+        self.base = base
+    }
 
     var isDark: Bool { scheme == .dark }
 
-    // Backgrounds
+    // MARK: - Font scaling
+
+    /// Shift any content size by the user's preference.
+    /// App titles are intentionally excluded from this helper.
+    func scaled(_ size: CGFloat) -> CGFloat {
+        max(8, size + (base - 16))
+    }
+
+    // MARK: - Backgrounds
+
     var bg1: Color { isDark
         ? Color(red: 0.08, green: 0.05, blue: 0.02)
         : Color(red: 0.96, green: 0.93, blue: 0.84) }

@@ -13,6 +13,7 @@ struct ContentView: View {
 
     @AppStorage("defaultStyleIDs") private var defaultStyleIDsRaw: String =
         TranslationStyle.defaultIDs.joined(separator: ",")
+    @AppStorage("fontSizeBase") private var fontSizeBase: Double = 17
 
     @State private var activeStyleIDs: Set<String> = TranslationStyle.defaultIDs
     @State private var filterLanguage: FilterLanguage = .all
@@ -22,7 +23,7 @@ struct ContentView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.horizontalSizeClass) var hSizeClass
 
-    var theme: AppTheme { AppTheme(scheme: colorScheme) }
+    var theme: AppTheme { AppTheme(scheme: colorScheme, base: CGFloat(fontSizeBase)) }
     var isIpad: Bool { hSizeClass == .regular }
 
     var defaultStyleIDs: Set<String> {
@@ -53,7 +54,7 @@ struct ContentView: View {
                 translatorView
             }
         }
-        .font(.custom("Georgia", size: 16))
+        .font(.custom("Georgia", size: theme.scaled(16)))
         .foregroundColor(theme.inkDark)
         .onAppear {
             handleSettingsBundleFlags()
@@ -69,7 +70,11 @@ struct ContentView: View {
     // MARK: - Settings bundle integration
 
     private func handleSettingsBundleFlags() {
-        UserDefaults.standard.register(defaults: ["clear_api_key": false])
+        UserDefaults.standard.register(defaults: [
+            "clear_api_key": false,
+            "persist_api_key": false,
+            "fontSizeBase": 17.0
+        ])
         if UserDefaults.standard.bool(forKey: "clear_api_key") {
             KeychainHelper.delete()
             UserDefaults.standard.set(false, forKey: "clear_api_key")
@@ -83,17 +88,18 @@ struct ContentView: View {
         VStack(spacing: 24) {
             VStack(spacing: 6) {
                 Text("⚜️").font(.system(size: 40))
+                // Title — intentionally not scaled
                 Text("app_title")
                     .font(.custom("Georgia", size: 26)).fontWeight(.bold)
                     .foregroundColor(theme.accent)
                 Text("app_subtitle")
-                    .font(.custom("Georgia", size: 13))
+                    .font(.custom("Georgia", size: theme.scaled(13)))
                     .foregroundColor(theme.faded).italic()
             }
 
             VStack(spacing: 16) {
                 Text("api_key_prompt")
-                    .font(.custom("Georgia", size: 14))
+                    .font(.custom("Georgia", size: theme.scaled(14)))
                     .foregroundColor(theme.faded).italic()
                     .multilineTextAlignment(.center)
 
@@ -135,10 +141,10 @@ struct ContentView: View {
                 .background(apiKey.hasPrefix("sk-") ? theme.accent : theme.faded)
                 .foregroundColor(theme.bg1)
                 .cornerRadius(6)
-                .font(.custom("Georgia", size: 15))
+                .font(.custom("Georgia", size: theme.scaled(15)))
 
                 Text("api_key_hint")
-                    .font(.custom("Georgia", size: 11))
+                    .font(.custom("Georgia", size: theme.scaled(11)))
                     .foregroundColor(theme.faded).italic()
             }
             .padding(28)
@@ -168,12 +174,13 @@ struct ContentView: View {
                     // Header
                     VStack(spacing: 4) {
                         Text("⚜️").font(.system(size: isIpad ? 44 : 36))
+                        // Title — intentionally not scaled
                         Text("app_title")
                             .font(.custom("Georgia", size: isIpad ? 30 : 24)).fontWeight(.bold)
                             .foregroundColor(theme.accent)
                         Button(action: { KeychainHelper.delete(); apiKey = ""; apiKeySet = false }) {
                             Text("forget_api_key")
-                                .font(.custom("Georgia", size: 11)).foregroundColor(theme.faded)
+                                .font(.custom("Georgia", size: theme.scaled(11))).foregroundColor(theme.faded)
                         }
                     }
                     .padding(.top, 16)
@@ -186,14 +193,14 @@ struct ContentView: View {
                     // Style chips
                     styleChipsView
 
-                    // Input card — anchor for scroll-to
+                    // Input card — scroll anchor
                     inputCard
                         .id("inputCard")
 
                     // Error
                     if let error = service.errorMessage {
                         Text("⚠️ \(error)")
-                            .font(.custom("Georgia", size: 13))
+                            .font(.custom("Georgia", size: theme.scaled(13)))
                             .foregroundColor(theme.accent).italic()
                             .multilineTextAlignment(.center)
                     }
@@ -206,7 +213,7 @@ struct ContentView: View {
                                     Image(systemName: showFavoritesOnly ? "heart.fill" : "heart")
                                     Text(showFavoritesOnly ? LocalizedStringKey("filter_all") : "♥")
                                 }
-                                .font(.custom("Georgia", size: 12))
+                                .font(.custom("Georgia", size: theme.scaled(12)))
                                 .padding(.horizontal, 12).padding(.vertical, 6)
                                 .background(showFavoritesOnly ? theme.accent.opacity(0.15) : theme.chipOff)
                                 .foregroundColor(showFavoritesOnly ? theme.accent : theme.faded)
@@ -216,20 +223,18 @@ struct ContentView: View {
                             }
                             Spacer()
                             Text("\(displayedHistory.count)")
-                                .font(.custom("Georgia", size: 11))
+                                .font(.custom("Georgia", size: theme.scaled(11)))
                                 .foregroundColor(theme.faded)
                         }
                     }
 
-                    // Results — 2-column grid on iPad
+                    // Results
                     if isIpad {
                         let columns = [GridItem(.flexible()), GridItem(.flexible())]
                         LazyVGrid(columns: columns, spacing: 16) {
                             ForEach(displayedHistory) { entry in
                                 ResultCard(
-                                    entry: entry,
-                                    theme: theme,
-                                    isIpad: isIpad,
+                                    entry: entry, theme: theme, isIpad: isIpad,
                                     isFavorited: service.favoritedIDs.contains(entry.id),
                                     onTapOriginal: { text in repopulate(text, proxy: proxy) },
                                     onToggleFavorite: { service.toggleFavorite(entry.id) }
@@ -239,9 +244,7 @@ struct ContentView: View {
                     } else {
                         ForEach(displayedHistory) { entry in
                             ResultCard(
-                                entry: entry,
-                                theme: theme,
-                                isIpad: isIpad,
+                                entry: entry, theme: theme, isIpad: isIpad,
                                 isFavorited: service.favoritedIDs.contains(entry.id),
                                 onTapOriginal: { text in repopulate(text, proxy: proxy) },
                                 onToggleFavorite: { service.toggleFavorite(entry.id) }
@@ -254,7 +257,7 @@ struct ContentView: View {
             .overlay(alignment: .topTrailing) {
                 Button(action: { showSettings = true }) {
                     Image(systemName: "gearshape")
-                        .font(.system(size: 18))
+                        .font(.system(size: theme.scaled(18)))
                         .foregroundColor(theme.faded)
                         .padding(16)
                 }
@@ -316,7 +319,7 @@ struct ContentView: View {
     func filterGroup<Content: View>(labelKey: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         HStack(spacing: 4) {
             Text(labelKey)
-                .font(.custom("Georgia", size: 9))
+                .font(.custom("Georgia", size: theme.scaled(9)))
                 .kerning(1.2)
                 .textCase(.uppercase)
                 .foregroundColor(theme.faded.opacity(0.7))
@@ -330,7 +333,7 @@ struct ContentView: View {
                 Text(emoji)
                 Text(labelKey)
             }
-            .font(.custom("Georgia", size: 11))
+            .font(.custom("Georgia", size: theme.scaled(11)))
             .padding(.horizontal, 10).padding(.vertical, 5)
             .background(on ? theme.accent.opacity(0.85) : theme.chipOff)
             .foregroundColor(on ? theme.chipOnText : theme.faded)
@@ -352,8 +355,8 @@ struct ContentView: View {
                         else  { activeStyleIDs.insert(style.id) }
                     }) {
                         HStack(spacing: 4) {
-                            Text(style.emoji).font(.system(size: 13))
-                            Text(style.label).font(.custom("Georgia", size: 12))
+                            Text(style.emoji).font(.system(size: theme.scaled(13)))
+                            Text(style.label).font(.custom("Georgia", size: theme.scaled(12)))
                         }
                         .padding(.horizontal, 12).padding(.vertical, 6)
                         .background(on ? theme.chipOn : theme.chipOff)
@@ -365,7 +368,7 @@ struct ContentView: View {
                 }
                 if visibleStyles.isEmpty {
                     Text("no_styles_match")
-                        .font(.custom("Georgia", size: 12))
+                        .font(.custom("Georgia", size: theme.scaled(12)))
                         .foregroundColor(theme.faded).italic()
                 }
             }
@@ -378,7 +381,7 @@ struct ContentView: View {
     var inputCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             TextEditor(text: $inputText)
-                .font(.custom("Georgia", size: 16))
+                .font(.custom("Georgia", size: theme.scaled(16)))
                 .foregroundColor(theme.inkDark)
                 .frame(minHeight: isIpad ? 100 : 80, maxHeight: isIpad ? 160 : 120)
                 .scrollContentBackground(.hidden)
@@ -389,7 +392,7 @@ struct ContentView: View {
 
             HStack {
                 Text(activeStyleIDs.isEmpty ? LocalizedStringKey("select_style") : LocalizedStringKey("tap_translate"))
-                    .font(.custom("Georgia", size: 12))
+                    .font(.custom("Georgia", size: theme.scaled(12)))
                     .foregroundColor(theme.faded).italic()
                 Spacer()
                 Button(action: translate) {
@@ -408,7 +411,7 @@ struct ContentView: View {
                 .background(translateDidSucceed ? theme.accent.opacity(0.7) : (canTranslate ? theme.accent : theme.faded))
                 .foregroundColor(theme.bg1)
                 .cornerRadius(6)
-                .font(.custom("Georgia", size: 15))
+                .font(.custom("Georgia", size: theme.scaled(15)))
                 .animation(.spring(response: 0.25, dampingFraction: 0.6), value: translateDidSucceed)
             }
         }
@@ -458,9 +461,9 @@ struct ResultCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
 
-            // Original text header — tappable to repopulate input
+            // Original text header — tappable
             Text("\"\(entry.original)\"")
-                .font(.custom("Georgia", size: 13))
+                .font(.custom("Georgia", size: theme.scaled(13)))
                 .foregroundColor(theme.faded).italic()
                 .padding(.vertical, 10)
                 .padding(.leading, 10)
@@ -479,24 +482,18 @@ struct ResultCard: View {
                 }
                 .overlay(alignment: .trailing) {
                     HStack(spacing: 10) {
-                        // Tap-to-edit hint
                         if onTapOriginal != nil {
                             Image(systemName: "arrow.uturn.left")
-                                .font(.system(size: 10))
+                                .font(.system(size: theme.scaled(10)))
                                 .foregroundColor(theme.faded.opacity(0.5))
                         }
-                        // Heart / favorite button
                         Button(action: {
-                            withAnimation(.spring(response: 0.2, dampingFraction: 0.4)) {
-                                heartScale = 1.45
-                            }
-                            withAnimation(.spring(response: 0.2, dampingFraction: 0.55).delay(0.15)) {
-                                heartScale = 1.0
-                            }
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.4)) { heartScale = 1.45 }
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.55).delay(0.15)) { heartScale = 1.0 }
                             onToggleFavorite?()
                         }) {
                             Image(systemName: isFavorited ? "heart.fill" : "heart")
-                                .font(.system(size: 14))
+                                .font(.system(size: theme.scaled(14)))
                                 .foregroundColor(isFavorited ? theme.accent : theme.faded.opacity(0.55))
                                 .scaleEffect(heartScale)
                         }
@@ -533,18 +530,18 @@ struct ResultCard: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("\(style.emoji) \(style.label)")
-                    .font(.custom("Georgia", size: 10))
+                    .font(.custom("Georgia", size: theme.scaled(10)))
                     .kerning(1.5).textCase(.uppercase)
                     .foregroundColor(theme.accent)
                 Spacer()
                 Button(action: { UIPasteboard.general.string = text }) {
                     Image(systemName: "doc.on.doc")
-                        .font(.system(size: 12))
+                        .font(.system(size: theme.scaled(12)))
                         .foregroundColor(theme.faded)
                 }
             }
             Text(text)
-                .font(.custom("Georgia", size: 15))
+                .font(.custom("Georgia", size: theme.scaled(15)))
                 .foregroundColor(theme.inkDark).italic()
                 .fixedSize(horizontal: false, vertical: true)
         }

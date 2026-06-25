@@ -1,7 +1,11 @@
 /* Group titles */
+"FONT_SIZE_GROUP"     = "Font Size";
 "ABOUT_GROUP"         = "About";
 "API_KEY_GROUP"       = "API Key";
 "PRIVACY_GROUP"       = "Privacy";
+
+/* Font Size */
+"FONT_SIZE_FOOTER"    = "Adjusts the text size throughout the app. The app title is always fixed. Default is 17pt.";
 
 /* About */
 "APP_VERSION_TITLE"   = "Version";
