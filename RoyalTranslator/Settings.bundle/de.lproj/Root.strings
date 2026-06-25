@@ -1,0 +1,14 @@
+/* Gruppenüberschriften */
+"ABOUT_GROUP"         = "Über die App";
+"API_KEY_GROUP"       = "API-Schlüssel";
+"PRIVACY_GROUP"       = "Datenschutz";
+
+/* Über die App */
+"APP_VERSION_TITLE"   = "Version";
+
+/* API-Schlüssel */
+"CLEAR_API_KEY_TITLE" = "Gespeicherten API-Schlüssel beim nächsten Start löschen";
+"API_KEY_FOOTER"      = "Dein API-Schlüssel wird im sicheren Geräteschlüsselbund gespeichert und nur direkt an Anthropic übertragen.";
+
+/* Datenschutz */
+"PRIVACY_FOOTER"      = "Der Königliche Übersetzer sendet deinen Text an Anthropics Claude-API, um Übersetzungen zu erstellen. Es werden keine Daten auf externen Servern gespeichert, außer was Anthropic gemäß ihrer Datenschutzrichtlinie verarbeitet.";

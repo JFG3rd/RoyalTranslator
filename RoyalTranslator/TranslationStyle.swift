@@ -4,33 +4,36 @@ import SwiftUI
 // MARK: - Filter Enums
 
 enum FilterLanguage: String, CaseIterable, Identifiable {
-    case all = "All"
-    case english = "English"
-    case german = "German"
+    case all, english, german
     var id: String { rawValue }
     var emoji: String { switch self { case .all: "🌍"; case .english: "🇬🇧"; case .german: "🇩🇪" } }
+    var locKey: LocalizedStringKey {
+        switch self { case .all: "filter_all"; case .english: "filter_english"; case .german: "filter_german" }
+    }
 }
 
 enum FilterGender: String, CaseIterable, Identifiable {
-    case all = "All"
-    case men = "Men"
-    case women = "Women"
+    case all, men, women
     var id: String { rawValue }
     var emoji: String { switch self { case .all: "👥"; case .men: "♂"; case .women: "♀" } }
+    var locKey: LocalizedStringKey {
+        switch self { case .all: "filter_all"; case .men: "filter_men"; case .women: "filter_women" }
+    }
 }
 
 enum FilterCategory: String, CaseIterable, Identifiable {
-    case all = "All"
-    case royalty = "Royalty"
-    case court = "Court"
-    case commonFolk = "Folk"
-    case mystic = "Mystic"
-    case clergy = "Clergy"
+    case all, royalty, court, commonFolk, mystic, clergy
     var id: String { rawValue }
     var emoji: String {
         switch self {
         case .all: "🏰"; case .royalty: "👑"; case .court: "🎭"
         case .commonFolk: "🧑‍🌾"; case .mystic: "🔮"; case .clergy: "✝️"
+        }
+    }
+    var locKey: LocalizedStringKey {
+        switch self {
+        case .all: "filter_all"; case .royalty: "filter_royalty"; case .court: "filter_court"
+        case .commonFolk: "filter_folk"; case .mystic: "filter_mystic"; case .clergy: "filter_clergy"
         }
     }
 }

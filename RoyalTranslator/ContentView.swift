@@ -48,6 +48,7 @@ struct ContentView: View {
         .font(.custom("Georgia", size: 16))
         .foregroundColor(theme.inkDark)
         .onAppear {
+            handleSettingsBundleFlags()
             activeStyleIDs = defaultStyleIDs
             if let savedKey = KeychainHelper.load(), savedKey.hasPrefix("sk-") {
                 apiKey = savedKey
@@ -57,22 +58,34 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Settings bundle integration
+
+    private func handleSettingsBundleFlags() {
+        // Register defaults so the toggle starts false when first installed
+        UserDefaults.standard.register(defaults: ["clear_api_key": false])
+        if UserDefaults.standard.bool(forKey: "clear_api_key") {
+            KeychainHelper.delete()
+            UserDefaults.standard.set(false, forKey: "clear_api_key")
+            apiKeySet = false
+        }
+    }
+
     // MARK: - API Key Screen
 
     var keyEntryView: some View {
         VStack(spacing: 24) {
             VStack(spacing: 6) {
                 Text("⚜️").font(.system(size: 40))
-                Text("The Royal Translator")
+                Text("app_title")
                     .font(.custom("Georgia", size: 26)).fontWeight(.bold)
                     .foregroundColor(theme.accent)
-                Text("Medieval Voices · Powered by Claude")
+                Text("app_subtitle")
                     .font(.custom("Georgia", size: 13))
                     .foregroundColor(theme.faded).italic()
             }
 
             VStack(spacing: 16) {
-                Text("Enter your Anthropic API key to begin.\nIt is stored securely in the device Keychain.")
+                Text("api_key_prompt")
                     .font(.custom("Georgia", size: 14))
                     .foregroundColor(theme.faded).italic()
                     .multilineTextAlignment(.center)
@@ -107,15 +120,17 @@ struct ContentView: View {
                 .cornerRadius(6)
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(theme.faded, lineWidth: 1))
 
-                Button("Enter the Chamber", action: commitKey)
-                    .disabled(!apiKey.hasPrefix("sk-"))
-                    .padding(.horizontal, 24).padding(.vertical, 10)
-                    .background(apiKey.hasPrefix("sk-") ? theme.accent : theme.faded)
-                    .foregroundColor(theme.bg1)
-                    .cornerRadius(6)
-                    .font(.custom("Georgia", size: 15))
+                Button(action: commitKey) {
+                    Text("enter_chamber")
+                        .padding(.horizontal, 24).padding(.vertical, 10)
+                }
+                .disabled(!apiKey.hasPrefix("sk-"))
+                .background(apiKey.hasPrefix("sk-") ? theme.accent : theme.faded)
+                .foregroundColor(theme.bg1)
+                .cornerRadius(6)
+                .font(.custom("Georgia", size: 15))
 
-                Text("Get your key at console.anthropic.com")
+                Text("api_key_hint")
                     .font(.custom("Georgia", size: 11))
                     .foregroundColor(theme.faded).italic()
             }
@@ -145,13 +160,13 @@ struct ContentView: View {
                 // Header
                 VStack(spacing: 4) {
                     Text("⚜️").font(.system(size: isIpad ? 44 : 36))
-                    Text("The Royal Translator")
+                    Text("app_title")
                         .font(.custom("Georgia", size: isIpad ? 30 : 24)).fontWeight(.bold)
                         .foregroundColor(theme.accent)
-                    Button("Forget API Key") {
-                        KeychainHelper.delete(); apiKey = ""; apiKeySet = false
+                    Button(action: { KeychainHelper.delete(); apiKey = ""; apiKeySet = false }) {
+                        Text("forget_api_key")
+                            .font(.custom("Georgia", size: 11)).foregroundColor(theme.faded)
                     }
-                    .font(.custom("Georgia", size: 11)).foregroundColor(theme.faded)
                 }
                 .padding(.top, 16)
 
@@ -213,25 +228,25 @@ struct ContentView: View {
     var filterChipsView: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                filterGroup(title: "Language") {
+                filterGroup(labelKey: "filter_language") {
                     ForEach(FilterLanguage.allCases) { f in
-                        filterChip(f.emoji + " " + f.rawValue, on: filterLanguage == f) {
+                        filterChip(emoji: f.emoji, labelKey: f.locKey, on: filterLanguage == f) {
                             filterLanguage = f
                         }
                     }
                 }
                 Divider().frame(height: 24).background(theme.faded.opacity(0.4))
-                filterGroup(title: "Gender") {
+                filterGroup(labelKey: "filter_gender") {
                     ForEach(FilterGender.allCases) { f in
-                        filterChip(f.emoji + " " + f.rawValue, on: filterGender == f) {
+                        filterChip(emoji: f.emoji, labelKey: f.locKey, on: filterGender == f) {
                             filterGender = f
                         }
                     }
                 }
                 Divider().frame(height: 24).background(theme.faded.opacity(0.4))
-                filterGroup(title: "Role") {
+                filterGroup(labelKey: "filter_role") {
                     ForEach(FilterCategory.allCases) { f in
-                        filterChip(f.emoji + " " + f.rawValue, on: filterCategory == f) {
+                        filterChip(emoji: f.emoji, labelKey: f.locKey, on: filterCategory == f) {
                             filterCategory = f
                         }
                     }
@@ -241,9 +256,9 @@ struct ContentView: View {
         }
     }
 
-    func filterGroup<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+    func filterGroup<Content: View>(labelKey: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         HStack(spacing: 4) {
-            Text(title)
+            Text(labelKey)
                 .font(.custom("Georgia", size: 9))
                 .kerning(1.2)
                 .textCase(.uppercase)
@@ -252,16 +267,19 @@ struct ContentView: View {
         }
     }
 
-    func filterChip(_ label: String, on: Bool, action: @escaping () -> Void) -> some View {
+    func filterChip(emoji: String, labelKey: LocalizedStringKey, on: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(label)
-                .font(.custom("Georgia", size: 11))
-                .padding(.horizontal, 10).padding(.vertical, 5)
-                .background(on ? theme.accent.opacity(0.85) : theme.chipOff)
-                .foregroundColor(on ? theme.chipOnText : theme.faded)
-                .cornerRadius(16)
-                .overlay(RoundedRectangle(cornerRadius: 16)
-                    .stroke(on ? theme.accent : theme.faded.opacity(0.4), lineWidth: 1))
+            HStack(spacing: 2) {
+                Text(emoji)
+                Text(labelKey)
+            }
+            .font(.custom("Georgia", size: 11))
+            .padding(.horizontal, 10).padding(.vertical, 5)
+            .background(on ? theme.accent.opacity(0.85) : theme.chipOff)
+            .foregroundColor(on ? theme.chipOnText : theme.faded)
+            .cornerRadius(16)
+            .overlay(RoundedRectangle(cornerRadius: 16)
+                .stroke(on ? theme.accent : theme.faded.opacity(0.4), lineWidth: 1))
         }
     }
 
@@ -289,7 +307,7 @@ struct ContentView: View {
                     }
                 }
                 if visibleStyles.isEmpty {
-                    Text("No styles match the filters")
+                    Text("no_styles_match")
                         .font(.custom("Georgia", size: 12))
                         .foregroundColor(theme.faded).italic()
                 }
@@ -313,7 +331,7 @@ struct ContentView: View {
             Divider().background(theme.faded)
 
             HStack {
-                Text(activeStyleIDs.isEmpty ? "Select at least one style" : "Tap Translate or press Return")
+                Text(activeStyleIDs.isEmpty ? LocalizedStringKey("select_style") : LocalizedStringKey("tap_translate"))
                     .font(.custom("Georgia", size: 12))
                     .foregroundColor(theme.faded).italic()
                 Spacer()
@@ -322,11 +340,11 @@ struct ContentView: View {
                         ProgressView().tint(theme.bg1)
                             .padding(.horizontal, 20).padding(.vertical, 8)
                     } else {
-                        Text("Translate")
+                        Text("translate")
                             .padding(.horizontal, 20).padding(.vertical, 8)
                     }
                 }
-                .disabled(service.isLoading || inputText.trimmingCharacters(in: .whitespaces).isEmpty || activeStyleIDs.isEmpty)
+                .disabled(!canTranslate)
                 .background(canTranslate ? theme.accent : theme.faded)
                 .foregroundColor(theme.bg1)
                 .cornerRadius(6)
@@ -364,7 +382,6 @@ struct ResultCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Original text
             Text("\"\(entry.original)\"")
                 .font(.custom("Georgia", size: 13))
                 .foregroundColor(theme.faded).italic()
@@ -374,19 +391,14 @@ struct ResultCard: View {
 
             Divider().background(theme.faded)
 
-            // On iPad always expand side-by-side; on iPhone use ViewThatFits
             if isIpad {
                 HStack(alignment: .top, spacing: 0) {
-                    columnsContent(dividers: true)
+                    columnsContent
                 }
             } else {
                 ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .top, spacing: 0) {
-                        columnsContent(dividers: true)
-                    }
-                    VStack(alignment: .leading, spacing: 0) {
-                        columnsContent(dividers: false)
-                    }
+                    HStack(alignment: .top, spacing: 0) { columnsContent }
+                    VStack(alignment: .leading, spacing: 0) { columnsContent }
                 }
             }
         }
@@ -396,7 +408,7 @@ struct ResultCard: View {
     }
 
     @ViewBuilder
-    func columnsContent(dividers: Bool) -> some View {
+    var columnsContent: some View {
         ForEach(Array(entry.styles.enumerated()), id: \.element.id) { i, style in
             if i > 0 { Divider().background(theme.faded) }
             translationColumn(style: style, text: entry.results[style.id] ?? "—")

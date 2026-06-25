@@ -23,7 +23,7 @@ struct SettingsView: View {
 
                     // Header
                     HStack {
-                        Text("Settings")
+                        Text("settings")
                             .font(.custom("Georgia", size: 22)).fontWeight(.bold)
                             .foregroundColor(theme.accent)
                         Spacer()
@@ -35,8 +35,8 @@ struct SettingsView: View {
 
                     // Default Styles
                     VStack(alignment: .leading, spacing: 16) {
-                        sectionHeader("Default Styles")
-                        Text("Pre-selected each launch. Adjust per-translation using the chips on the main screen.")
+                        sectionHeader("default_styles")
+                        Text("default_styles_hint")
                             .font(.custom("Georgia", size: 12))
                             .foregroundColor(theme.faded).italic()
 
@@ -48,11 +48,11 @@ struct SettingsView: View {
 
                     // App Icon
                     VStack(alignment: .leading, spacing: 16) {
-                        sectionHeader("App Icon")
+                        sectionHeader("app_icon")
                         HStack(spacing: 20) {
-                            IconChoice(label: "Royal", imageName: "AppIconLight",
+                            IconChoice(labelKey: "royal", imageName: "AppIconLight",
                                        isSelected: currentIcon == nil, theme: theme) { setIcon(nil) }
-                            IconChoice(label: "Dark", imageName: "AppIconDark_120",
+                            IconChoice(labelKey: "dark", imageName: "AppIconDark_120",
                                        isSelected: currentIcon == "AppIconDark", theme: theme) { setIcon("AppIconDark") }
                         }
                     }
@@ -81,7 +81,7 @@ struct SettingsView: View {
             }) {
                 HStack {
                     Text(category.emoji)
-                    Text(category.rawValue)
+                    Text(category.locKey)
                         .font(.custom("Georgia", size: 15))
                         .foregroundColor(theme.inkDark)
                     Spacer()
@@ -116,9 +116,13 @@ struct SettingsView: View {
                                     Text(style.label)
                                         .font(.custom("Georgia", size: 14))
                                         .foregroundColor(theme.inkDark)
-                                    Text(style.language.rawValue + " · " + style.gender.rawValue)
-                                        .font(.custom("Georgia", size: 10))
-                                        .foregroundColor(theme.faded)
+                                    HStack(spacing: 2) {
+                                        Text(style.language.locKey)
+                                        Text("·")
+                                        Text(style.gender.locKey)
+                                    }
+                                    .font(.custom("Georgia", size: 10))
+                                    .foregroundColor(theme.faded)
                                 }
                             }
                         }
@@ -137,8 +141,8 @@ struct SettingsView: View {
         .cornerRadius(6)
     }
 
-    func sectionHeader(_ title: String) -> some View {
-        Text(title)
+    func sectionHeader(_ key: LocalizedStringKey) -> some View {
+        Text(key)
             .font(.custom("Georgia", size: 13))
             .kerning(1.5).textCase(.uppercase)
             .foregroundColor(theme.faded)
@@ -154,7 +158,7 @@ struct SettingsView: View {
 // MARK: - Icon Choice
 
 struct IconChoice: View {
-    let label: String
+    let labelKey: LocalizedStringKey
     let imageName: String
     let isSelected: Bool
     let theme: AppTheme
@@ -173,7 +177,7 @@ struct IconChoice: View {
                     RoundedRectangle(cornerRadius: 18)
                         .fill(Color.gray.opacity(0.3)).frame(width: 80, height: 80)
                 }
-                Text(label)
+                Text(labelKey)
                     .font(.custom("Georgia", size: 13))
                     .foregroundColor(isSelected ? theme.accent : theme.faded)
             }
