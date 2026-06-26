@@ -9,6 +9,8 @@ struct SettingsView: View {
     @State private var expandedCategory: FilterCategory? = nil
     @AppStorage("persist_api_key") private var persistAPIKey = false
     @AppStorage("fontSizeBase") private var fontSizeBase: Double = 17
+    @AppStorage("hideTutorial") private var hideTutorial = false
+    @State private var showTutorial = false
 
     var defaultStyleIDs: Set<String> {
         Set(defaultStyleIDsRaw.split(separator: ",").map(String.init))
@@ -72,6 +74,32 @@ struct SettingsView: View {
                         }
                     }
                     .settingsCard(theme: liveTheme)
+
+                    // Tutorial
+                    VStack(alignment: .leading, spacing: 12) {
+                        sectionHeader("tutorial_settings_header")
+                        Toggle(isOn: Binding(
+                            get: { !hideTutorial },
+                            set: { hideTutorial = !$0 }
+                        )) {
+                            Text("tutorial_show_on_launch")
+                                .font(.custom("Georgia", size: liveTheme.scaled(14)))
+                                .foregroundColor(liveTheme.inkDark)
+                        }
+                        .tint(liveTheme.accent)
+                        Button(action: { showTutorial = true }) {
+                            HStack {
+                                Image(systemName: "questionmark.circle")
+                                Text("tutorial_show_now")
+                            }
+                            .font(.custom("Georgia", size: liveTheme.scaled(14)))
+                            .foregroundColor(liveTheme.accent)
+                        }
+                    }
+                    .settingsCard(theme: liveTheme)
+                    .sheet(isPresented: $showTutorial) {
+                        TutorialView(isPresented: $showTutorial, theme: liveTheme)
+                    }
 
                     // API Key
                     VStack(alignment: .leading, spacing: 12) {

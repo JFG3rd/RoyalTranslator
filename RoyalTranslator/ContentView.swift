@@ -7,7 +7,9 @@ struct ContentView: View {
     @State private var apiKeySet = false
     @State private var showAPIKey = false
     @State private var showSettings = false
+    @State private var showTutorial = false
     @State private var translateDidSucceed = false
+    @AppStorage("hideTutorial") private var hideTutorial = false
     @State private var showFavoritesOnly = false
     @FocusState private var inputFocused: Bool
 
@@ -146,6 +148,15 @@ struct ContentView: View {
                 Text("api_key_hint")
                     .font(.custom("Georgia", size: theme.scaled(11)))
                     .foregroundColor(theme.faded).italic()
+
+                Divider().background(theme.faded.opacity(0.3))
+
+                Toggle(isOn: $hideTutorial) {
+                    Text("tutorial_hide")
+                        .font(.custom("Georgia", size: theme.scaled(12)))
+                        .foregroundColor(theme.faded)
+                }
+                .tint(theme.accent)
             }
             .padding(28)
             .background(theme.cardFill)
@@ -162,6 +173,7 @@ struct ContentView: View {
         service.apiKey = apiKey
         KeychainHelper.save(apiKey)
         apiKeySet = true
+        if !hideTutorial { showTutorial = true }
     }
 
     // MARK: - Translator Screen
@@ -251,11 +263,20 @@ struct ContentView: View {
                 .padding(isIpad ? 24 : 16)
             }
             .overlay(alignment: .topTrailing) {
-                Button(action: { showSettings = true }) {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: theme.scaled(18)))
-                        .foregroundColor(theme.faded)
-                        .padding(16)
+                HStack(spacing: 4) {
+                    Button(action: { showTutorial = true }) {
+                        Image(systemName: "questionmark.circle")
+                            .font(.system(size: theme.scaled(18)))
+                            .foregroundColor(theme.faded)
+                            .padding(.vertical, 16)
+                            .padding(.leading, 16)
+                    }
+                    Button(action: { showSettings = true }) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: theme.scaled(18)))
+                            .foregroundColor(theme.faded)
+                            .padding(16)
+                    }
                 }
             }
             .sheet(isPresented: $showSettings) {
@@ -265,6 +286,9 @@ struct ContentView: View {
                     theme: theme
                 )
                 .onDisappear { activeStyleIDs = defaultStyleIDs }
+            }
+            .sheet(isPresented: $showTutorial) {
+                TutorialView(isPresented: $showTutorial, theme: theme)
             }
         }
     }
