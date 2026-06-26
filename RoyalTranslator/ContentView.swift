@@ -178,10 +178,6 @@ struct ContentView: View {
                         Text("app_title")
                             .font(.custom("Georgia", size: isIpad ? 30 : 24)).fontWeight(.bold)
                             .foregroundColor(theme.accent)
-                        Button(action: { KeychainHelper.delete(); apiKey = ""; apiKeySet = false }) {
-                            Text("forget_api_key")
-                                .font(.custom("Georgia", size: theme.scaled(11))).foregroundColor(theme.faded)
-                        }
                     }
                     .padding(.top, 16)
 
@@ -483,7 +479,7 @@ struct ResultCard: View {
                 HStack(spacing: 10) {
                     if onTapOriginal != nil {
                         Image(systemName: "arrow.uturn.left")
-                            .font(.system(size: theme.scaled(10)))
+                            .font(.system(size: theme.scaled(12)))
                             .foregroundColor(theme.faded.opacity(0.5))
                     }
                     Button(action: {
@@ -492,7 +488,7 @@ struct ResultCard: View {
                         onToggleFavorite?()
                     }) {
                         Image(systemName: isFavorited ? "heart.fill" : "heart")
-                            .font(.system(size: theme.scaled(14)))
+                            .font(.system(size: theme.scaled(16)))
                             .foregroundColor(isFavorited ? theme.accent : theme.faded.opacity(0.55))
                             .scaleEffect(heartScale)
                     }
