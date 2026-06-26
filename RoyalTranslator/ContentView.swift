@@ -461,46 +461,48 @@ struct ResultCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
 
-            // Original text header — tappable
-            Text("\"\(entry.original)\"")
-                .font(.custom("Georgia", size: theme.scaled(13)))
-                .foregroundColor(theme.faded).italic()
-                .padding(.vertical, 10)
-                .padding(.leading, 10)
-                .padding(.trailing, 70)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(headerTapped ? theme.accent.opacity(0.18) : theme.rowAlt)
-                .animation(.easeOut(duration: 0.25), value: headerTapped)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    guard onTapOriginal != nil else { return }
-                    withAnimation(.easeIn(duration: 0.1)) { headerTapped = true }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                        withAnimation(.easeOut(duration: 0.2)) { headerTapped = false }
-                    }
-                    onTapOriginal?(entry.original)
-                }
-                .overlay(alignment: .trailing) {
-                    HStack(spacing: 10) {
-                        if onTapOriginal != nil {
-                            Image(systemName: "arrow.uturn.left")
-                                .font(.system(size: theme.scaled(10)))
-                                .foregroundColor(theme.faded.opacity(0.5))
+            // Original text header — tappable area left, icons right (siblings, no overlay)
+            HStack(spacing: 0) {
+                Text("\"\(entry.original)\"")
+                    .font(.custom("Georgia", size: theme.scaled(13)))
+                    .foregroundColor(theme.faded).italic()
+                    .padding(.vertical, 10)
+                    .padding(.leading, 10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        guard onTapOriginal != nil else { return }
+                        withAnimation(.easeIn(duration: 0.1)) { headerTapped = true }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                            withAnimation(.easeOut(duration: 0.2)) { headerTapped = false }
                         }
-                        Button(action: {
-                            withAnimation(.spring(response: 0.2, dampingFraction: 0.4)) { heartScale = 1.45 }
-                            withAnimation(.spring(response: 0.2, dampingFraction: 0.55).delay(0.15)) { heartScale = 1.0 }
-                            onToggleFavorite?()
-                        }) {
-                            Image(systemName: isFavorited ? "heart.fill" : "heart")
-                                .font(.system(size: theme.scaled(14)))
-                                .foregroundColor(isFavorited ? theme.accent : theme.faded.opacity(0.55))
-                                .scaleEffect(heartScale)
-                        }
-                        .buttonStyle(.plain)
+                        onTapOriginal?(entry.original)
                     }
-                    .padding(.trailing, 10)
+                    .layoutPriority(1)
+
+                HStack(spacing: 10) {
+                    if onTapOriginal != nil {
+                        Image(systemName: "arrow.uturn.left")
+                            .font(.system(size: theme.scaled(10)))
+                            .foregroundColor(theme.faded.opacity(0.5))
+                    }
+                    Button(action: {
+                        withAnimation(.spring(response: 0.2, dampingFraction: 0.4)) { heartScale = 1.45 }
+                        withAnimation(.spring(response: 0.2, dampingFraction: 0.55).delay(0.15)) { heartScale = 1.0 }
+                        onToggleFavorite?()
+                    }) {
+                        Image(systemName: isFavorited ? "heart.fill" : "heart")
+                            .font(.system(size: theme.scaled(14)))
+                            .foregroundColor(isFavorited ? theme.accent : theme.faded.opacity(0.55))
+                            .scaleEffect(heartScale)
+                    }
+                    .buttonStyle(.plain)
                 }
+                .padding(.trailing, 10)
+                .padding(.leading, 6)
+            }
+            .background(headerTapped ? theme.accent.opacity(0.18) : theme.rowAlt)
+            .animation(.easeOut(duration: 0.25), value: headerTapped)
 
             Divider().background(theme.faded)
 

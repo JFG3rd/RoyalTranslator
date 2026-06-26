@@ -313,12 +313,12 @@ struct TranslationStyle: Identifiable, Hashable, Codable {
               prompt: "ZAUBERER: Derselbe kryptische Zauberer auf Archaideutsch. Düster, vage, mystisch.",
               language: .german, gender: .men, category: .mystic),
 
-        .init(id: "male_apothecary_en", emoji: "⚗️", label: "Apothecary",
-              prompt: "MALE_APOTHECARY: Precise learned English. Measures words like ingredients. Clinical observations with an ominous undertone — knows exactly what dose would be too much.",
+        .init(id: "herbman_en", emoji: "🌿", label: "Herb Man",
+              prompt: "HERB_MAN: Village herb healer — practical, earthy English. Speaks in terms of roots, bark, and seasons. Slightly cryptic about his remedies (\"the white root knows what ails thee\"). Not a doctor; doesn't pretend to be. Would be insulted by the comparison.",
               language: .english, gender: .men, category: .mystic),
 
-        .init(id: "male_apothecary_de", emoji: "⚗️", label: "Der Apotheker",
-              prompt: "DER_APOTHEKER: Derselbe präzise, leicht beängstigende Apotheker auf Archaideutsch. Wiegt Worte wie Zutaten. Weiß ein bisschen zu viel über Kräuter.",
+        .init(id: "herbman_de", emoji: "🌿", label: "Der Kräutermann",
+              prompt: "DER_KRÄUTERMANN: Derselbe dörfliche Kräuterheiler auf Archaideutsch. Erdverbunden, spricht in Pflanzenbildern. Seine Rezepte sind sein Geheimnis.",
               language: .german, gender: .men, category: .mystic),
 
         .init(id: "wise_elder_en", emoji: "🪵", label: "Wise Elder",
@@ -339,12 +339,12 @@ struct TranslationStyle: Identifiable, Hashable, Codable {
               prompt: "DIE_HEXE: Dieselbe dunkle Zauberin auf Archaideutsch. Rätselhaft, leicht bedrohlich, spricht als lese sie aus einem bereits geschriebenen Schicksal.",
               language: .german, gender: .women, category: .mystic),
 
-        .init(id: "apothecary_en", emoji: "⚗️", label: "Apothecary (Woman)",
-              prompt: "APOTHECARY: Precise learned English. Measures words like ingredients. Clinical with a slightly ominous undertone — knows too much about what herbs can do.",
+        .init(id: "herbwoman_en", emoji: "🌿", label: "Herb Woman",
+              prompt: "HERB_WOMAN: Wise village herb woman — earthy, precise, and slightly ominous about her knowledge. Speaks in terms of what roots cure and what roots don't. Not a witch; she'll be very clear about that distinction. Mostly.",
               language: .english, gender: .women, category: .mystic),
 
-        .init(id: "apothecary_de", emoji: "⚗️", label: "Die Apothekerin",
-              prompt: "DIE_APOTHEKERIN: Dieselbe präzise, klinisch-beunruhigende Apothekerin auf Archaideutsch.",
+        .init(id: "herbwoman_de", emoji: "🌿", label: "Das Kräuterweib",
+              prompt: "DAS_KRÄUTERWEIB: Dieselbe wissende Kräuterfrau auf Archaideutsch. Kennt die Wirkung jeder Pflanze. Betont sie sei keine Hexe — meistens.",
               language: .german, gender: .women, category: .mystic),
 
         // ── CLERGY · MEN ─────────────────────────────────────────────────
