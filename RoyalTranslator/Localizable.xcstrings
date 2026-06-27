@@ -1147,7 +1147,7 @@
     },
     "coach_skip" : {
       "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Überspringen" } },
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Abbrechen" } },
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Skip" } }
       }
     },

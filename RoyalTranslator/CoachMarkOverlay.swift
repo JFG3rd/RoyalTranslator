@@ -249,12 +249,16 @@ struct CoachMarkOverlay: View {
                     Text("coach_skip")
                         .font(.custom("Georgia", size: theme.scaled(12)))
                         .foregroundColor(theme.faded)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
                 }
                 .padding(.trailing, 10)
                 Button(action: advance) {
                     Text(isLast ? "coach_done" : "coach_next")
                         .font(.custom("Georgia", size: theme.scaled(13))).fontWeight(.semibold)
-                        .padding(.horizontal, 18).padding(.vertical, 8)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .padding(.horizontal, 14).padding(.vertical, 8)
                         .background(theme.accent)
                         .foregroundColor(.white)
                         .cornerRadius(22)
