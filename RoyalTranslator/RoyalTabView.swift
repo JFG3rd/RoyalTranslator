@@ -72,7 +72,11 @@ struct RoyalTabView: View {
         .overlayPreferenceValue(CoachAnchorKey.self) { anchors in
             if showCoachTutorial {
                 GeometryReader { geo in
-                    let tabRects = liveTabRects(screenSize: geo.size)
+                    // geo.safeAreaInsets is still valid even with .ignoresSafeArea() below —
+                    // it reflects the true window safe area (status bar + tab bar + home indicator).
+                    // iPad iOS 18: top tab bar → safeTop > safeBot
+                    // iPhone:      bottom tab bar → safeBot > safeTop
+                    let tabRects = tabBarRects(geo: geo)
                     CoachMarkOverlay(
                         steps: CoachStep.dispatchSteps,
                         anchors: anchors,
@@ -100,73 +104,36 @@ struct RoyalTabView: View {
         }
     }
 
-    // Build tab spotlight rects using the live UITabBar frame when available,
-    // falling back to safe-area-inset heuristics for iOS 18 iPad where the
-    // tab bar is rendered at the top as a SwiftUI view with no UITabBar subview.
-    private func liveTabRects(screenSize: CGSize) -> [String: CGRect] {
+    // Derive tab item rects purely from SwiftUI's GeometryProxy safe-area insets.
+    // Even inside .ignoresSafeArea(), geo.safeAreaInsets reflects the true window insets:
+    //   iPad iOS 18 (top tab bar):    safeTop  > safeBot  → bar spans the top inset
+    //   iPhone      (bottom tab bar): safeBot  > safeTop  → bar spans the bottom inset
+    private func tabBarRects(geo: GeometryProxy) -> [String: CGRect] {
         let names = ["tab_dispatch", "tab_court", "tab_archives", "tab_favourites", "tab_realm"]
+        let safeTop = geo.safeAreaInsets.top
+        let safeBot = geo.safeAreaInsets.bottom
+        let w = geo.size.width
+        let h = geo.size.height
 
-        // 1. Search the entire view hierarchy for a UITabBar view (not just UITabBarController).
-        //    Convert its frame to window-root coordinates so they match the overlay space.
-        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = scene.windows.first(where: { $0.isKeyWindow }),
-           let tabBar = findTabBarView(in: window) {
-            let frame = tabBar.convert(tabBar.bounds, to: window)
-            if frame.width > 10 && frame.height > 10 {
-                return tabRects(in: frame, names: names)
-            }
-        }
-
-        // 2. Fallback: derive position from window safe-area insets.
-        //    On iPad iOS 18 the tab bar is at the TOP; the combined top safe area
-        //    (status bar + tab bar) is noticeably taller than the status bar alone.
-        //    On iPhone the tab bar is at the BOTTOM; bottom inset > 40pt.
-        let safeInsets: UIEdgeInsets = {
-            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let win = scene.windows.first(where: { $0.isKeyWindow }) {
-                return win.safeAreaInsets
-            }
-            return .zero
-        }()
-
-        let barH: CGFloat = 49
-        let frame: CGRect
-        if safeInsets.bottom > 40 {
-            // iPhone-style: tab bar at the bottom
-            frame = CGRect(x: 0, y: screenSize.height - barH - safeInsets.bottom,
-                           width: screenSize.width, height: barH)
+        let barRect: CGRect
+        if safeTop > safeBot {
+            // Tab bar is at the top — its region is the full top safe area
+            barRect = CGRect(x: 0, y: 0, width: w, height: safeTop)
         } else {
-            // iPad iOS 18-style: tab bar at the top.
-            // The top safe area covers status bar + tab bar. Approximate tab bar
-            // as occupying the lower portion of that inset.
-            let topInset = max(safeInsets.top, barH + 20) // at least status+bar
-            frame = CGRect(x: 0, y: topInset - barH,
-                           width: screenSize.width, height: barH)
+            // Tab bar is at the bottom — its region is the full bottom safe area
+            barRect = CGRect(x: 0, y: h - safeBot, width: w, height: safeBot)
         }
-        return tabRects(in: frame, names: names)
-    }
 
-    private func tabRects(in frame: CGRect, names: [String]) -> [String: CGRect] {
-        let tabW = frame.width / CGFloat(names.count)
+        let tabW = w / CGFloat(names.count)
         var result: [String: CGRect] = [:]
         for (i, name) in names.enumerated() {
-            result[name] = CGRect(
-                x: frame.minX + tabW * CGFloat(i) + 6,
-                y: frame.minY + 4,
-                width: tabW - 12,
-                height: frame.height - 8
-            )
+            // Centre the spotlight in the lower 60% of the bar region (avoids status bar)
+            let spotY = barRect.minY + barRect.height * 0.4
+            let spotH = barRect.height * 0.55
+            result[name] = CGRect(x: tabW * CGFloat(i) + 6, y: spotY,
+                                  width: tabW - 12, height: spotH)
         }
         return result
-    }
-
-    // Search the full UIView tree for a UITabBar (works even when there is no UITabBarController).
-    private func findTabBarView(in view: UIView) -> UITabBar? {
-        if let bar = view as? UITabBar { return bar }
-        for sub in view.subviews {
-            if let found = findTabBarView(in: sub) { return found }
-        }
-        return nil
     }
 }
 
