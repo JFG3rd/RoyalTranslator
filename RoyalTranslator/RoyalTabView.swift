@@ -17,7 +17,7 @@ struct RoyalTabView: View {
         GeometryReader { geo in
             TabView(selection: $selectedTab) {
 
-                // 0 — Dispatch
+                // 0 — Sendung / Dispatch
                 DispatchView(theme: theme) {
                     coachStep = 0
                     withAnimation { showCoachTutorial = true }
@@ -27,7 +27,7 @@ struct RoyalTabView: View {
                 .tabItem { Label("tab_dispatch", systemImage: "scroll.fill") }
                 .tag(0)
 
-                // 1 — Court
+                // 1 — Hof / Court
                 NavigationStack {
                     CourtView(theme: theme, sheetMode: false)
                         .environmentObject(court)
@@ -37,7 +37,7 @@ struct RoyalTabView: View {
                 .tabItem { Label("tab_court", systemImage: "person.3.fill") }
                 .tag(1)
 
-                // 2 — Archives
+                // 2 — Archiv / Archives
                 NavigationStack {
                     ArchivesView(theme: theme, selectedTab: $selectedTab)
                         .environmentObject(service)
@@ -46,7 +46,7 @@ struct RoyalTabView: View {
                 .tabItem { Label("tab_archives", systemImage: "scroll") }
                 .tag(2)
 
-                // 3 — Favourites
+                // 3 — Favoriten / Favourites
                 NavigationStack {
                     FavouritesView(theme: theme)
                         .environmentObject(service)
@@ -54,7 +54,7 @@ struct RoyalTabView: View {
                 .tabItem { Label("tab_favourites", systemImage: "heart.fill") }
                 .tag(3)
 
-                // 4 — Realm (Settings)
+                // 4 — Reich / Realm
                 RealmView(theme: theme)
                     .environmentObject(court)
                     .tabItem { Label("tab_realm", systemImage: "gearshape.fill") }
@@ -67,18 +67,34 @@ struct RoyalTabView: View {
                     selectedTab = 0
                 }
             }
-            // Coach mark overlay — floats above everything including the tab bar
+            // Coach mark overlay — floats above the tab bar
             .overlayPreferenceValue(CoachAnchorKey.self) { anchors in
                 if showCoachTutorial {
+                    // Compute exact tab-bar item rects from safe area geometry.
+                    // iOS tab bar: 49pt tall, sits immediately above the safe area bottom inset.
+                    let safeBottom = geo.safeAreaInsets.bottom
+                    let barH: CGFloat = 49
+                    let barTop = geo.size.height - barH - safeBottom
+                    let tabW = geo.size.width / 5
+                    let tabRects: [String: CGRect] = [
+                        "tab_dispatch":   CGRect(x: tabW * 0 + 6, y: barTop + 4, width: tabW - 12, height: barH - 8),
+                        "tab_court":      CGRect(x: tabW * 1 + 6, y: barTop + 4, width: tabW - 12, height: barH - 8),
+                        "tab_archives":   CGRect(x: tabW * 2 + 6, y: barTop + 4, width: tabW - 12, height: barH - 8),
+                        "tab_favourites": CGRect(x: tabW * 3 + 6, y: barTop + 4, width: tabW - 12, height: barH - 8),
+                        "tab_realm":      CGRect(x: tabW * 4 + 6, y: barTop + 4, width: tabW - 12, height: barH - 8),
+                    ]
+
                     CoachMarkOverlay(
                         steps: CoachStep.dispatchSteps,
                         anchors: anchors,
+                        extraRects: tabRects,
                         geo: geo,
                         currentStep: $coachStep,
                         theme: theme,
                         onDismiss: {
                             withAnimation { showCoachTutorial = false }
                             coachStep = 0
+                            hideTutorial = true
                         }
                     )
                     .transition(.opacity)

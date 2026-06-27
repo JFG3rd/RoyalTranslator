@@ -1225,26 +1225,50 @@
     },
     "coach_s7_title" : {
       "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Archiv-Tab" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Archives Tab" } }
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Der Hof-Tab" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The Court Tab" } }
       }
     },
     "coach_s7_body" : {
       "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Jede Sendung wird nach Datum gruppiert im Archiv gespeichert. Wische nach links, um erneut zu senden — nach rechts zum Löschen." } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Every dispatch is saved here, grouped by date. Swipe left to re-dispatch, swipe right to delete." } }
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Hier wählst du alle verfügbaren Charaktere aus — gefiltert nach Sprache, Geschlecht und Rolle. Tippe auf eine Karte, um einen Charakter in deinen Hof zu laden oder zu entlassen." } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Browse all available characters here, filtered by language, gender, and role. Tap a card to summon or dismiss a character from your court." } }
       }
     },
     "coach_s8_title" : {
       "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Reich-Tab" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Realm Tab" } }
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Der Archiv-Tab" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The Archives Tab" } }
       }
     },
     "coach_s8_body" : {
       "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Passe die App an — Schriftgröße, Standard-Charaktere und API-Schlüssel — alles im Reich-Tab. Diese Tour erscheint beim nächsten Start nicht mehr." } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Customise font size, default characters, and your API key in the Realm tab. This tour won't show again on next launch." } }
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Alle bisherigen Sendungen werden hier nach Datum gespeichert. Tippe auf einen Eintrag, um die Antworten aufzuklappen. Wische nach links, um erneut zu senden — nach rechts, um zu löschen." } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Every past dispatch is saved here, grouped by date. Tap an entry to expand replies. Swipe left to re-dispatch, swipe right to delete." } }
+      }
+    },
+    "coach_s9_title" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Der Favoriten-Tab" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The Favourites Tab" } }
+      }
+    },
+    "coach_s9_body" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Jede einzelne Charakterantwort, die du mit ♥ markiert hast, wird hier gesammelt — nach Charakter oder nach Datum sortierbar. Wische links zum Kopieren, rechts zum Entfernen." } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Every character reply you've hearted appears here — sort by character or by date. Swipe left to copy, swipe right to remove." } }
+      }
+    },
+    "coach_s10_title" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Der Reich-Tab" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The Realm Tab" } }
+      }
+    },
+    "coach_s10_body" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Passe Schriftgröße, Standard-Charaktere und API-Schlüssel an. Diese Tour erscheint beim nächsten Start nicht mehr — du kannst sie jederzeit über die ? Schaltfläche erneut öffnen." } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Adjust font size, default characters, and your API key here. This tour won't auto-play again — tap ? anytime to reopen it." } }
       }
     },
     "tab_dispatch" : {
