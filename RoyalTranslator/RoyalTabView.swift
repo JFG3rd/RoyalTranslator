@@ -14,64 +14,63 @@ struct RoyalTabView: View {
     var theme: AppTheme { AppTheme(scheme: colorScheme, base: CGFloat(fontSizeBase)) }
 
     var body: some View {
-        GeometryReader { geo in
-            TabView(selection: $selectedTab) {
+        TabView(selection: $selectedTab) {
+            // 0 — Sendung / Dispatch
+            DispatchView(theme: theme) {
+                coachStep = 0
+                withAnimation { showCoachTutorial = true }
+            }
+            .environmentObject(court)
+            .environmentObject(service)
+            .tabItem { Label("tab_dispatch", systemImage: "scroll.fill") }
+            .tag(0)
 
-                // 0 — Sendung / Dispatch
-                DispatchView(theme: theme) {
-                    coachStep = 0
-                    withAnimation { showCoachTutorial = true }
-                }
-                .environmentObject(court)
-                .environmentObject(service)
-                .tabItem { Label("tab_dispatch", systemImage: "scroll.fill") }
-                .tag(0)
-
-                // 1 — Hof / Court
-                NavigationStack {
-                    CourtView(theme: theme, sheetMode: false)
-                        .environmentObject(court)
-                        .navigationTitle(Text("tab_court"))
-                        .navigationBarTitleDisplayMode(.inline)
-                }
-                .tabItem { Label("tab_court", systemImage: "person.3.fill") }
-                .tag(1)
-
-                // 2 — Archiv / Archives
-                NavigationStack {
-                    ArchivesView(theme: theme, selectedTab: $selectedTab)
-                        .environmentObject(service)
-                        .environmentObject(court)
-                }
-                .tabItem { Label("tab_archives", systemImage: "scroll") }
-                .tag(2)
-
-                // 3 — Favoriten / Favourites
-                NavigationStack {
-                    FavouritesView(theme: theme)
-                        .environmentObject(service)
-                }
-                .tabItem { Label("tab_favourites", systemImage: "heart.fill") }
-                .tag(3)
-
-                // 4 — Reich / Realm
-                RealmView(theme: theme)
+            // 1 — Hof / Court
+            NavigationStack {
+                CourtView(theme: theme, sheetMode: false)
                     .environmentObject(court)
-                    .tabItem { Label("tab_realm", systemImage: "gearshape.fill") }
-                    .tag(4)
+                    .navigationTitle(Text("tab_court"))
+                    .navigationBarTitleDisplayMode(.inline)
             }
-            .tint(theme.accent)
-            .onReceive(NotificationCenter.default.publisher(for: .redispatch)) { notification in
-                if let text = notification.object as? String {
-                    NotificationCenter.default.post(name: .redispatchText, object: text)
-                    selectedTab = 0
-                }
+            .tabItem { Label("tab_court", systemImage: "person.3.fill") }
+            .tag(1)
+
+            // 2 — Archiv / Archives
+            NavigationStack {
+                ArchivesView(theme: theme, selectedTab: $selectedTab)
+                    .environmentObject(service)
+                    .environmentObject(court)
             }
-            // Coach mark overlay — floats above the tab bar
-            .overlayPreferenceValue(CoachAnchorKey.self) { anchors in
-                if showCoachTutorial {
-                    // Compute exact tab-bar item rects from safe area geometry.
-                    // iOS tab bar: 49pt tall, sits immediately above the safe area bottom inset.
+            .tabItem { Label("tab_archives", systemImage: "scroll") }
+            .tag(2)
+
+            // 3 — Favoriten / Favourites
+            NavigationStack {
+                FavouritesView(theme: theme)
+                    .environmentObject(service)
+            }
+            .tabItem { Label("tab_favourites", systemImage: "heart.fill") }
+            .tag(3)
+
+            // 4 — Reich / Realm
+            RealmView(theme: theme)
+                .environmentObject(court)
+                .tabItem { Label("tab_realm", systemImage: "gearshape.fill") }
+                .tag(4)
+        }
+        .tint(theme.accent)
+        .onReceive(NotificationCenter.default.publisher(for: .redispatch)) { notification in
+            if let text = notification.object as? String {
+                NotificationCenter.default.post(name: .redispatchText, object: text)
+                selectedTab = 0
+            }
+        }
+        // Coach mark overlay.
+        // The GeometryReader uses .ignoresSafeArea() so geo.size == full screen size,
+        // which lets us accurately calculate where the tab bar items sit.
+        .overlayPreferenceValue(CoachAnchorKey.self) { anchors in
+            if showCoachTutorial {
+                GeometryReader { geo in
                     let safeBottom = geo.safeAreaInsets.bottom
                     let barH: CGFloat = 49
                     let barTop = geo.size.height - barH - safeBottom
@@ -83,7 +82,6 @@ struct RoyalTabView: View {
                         "tab_favourites": CGRect(x: tabW * 3 + 6, y: barTop + 4, width: tabW - 12, height: barH - 8),
                         "tab_realm":      CGRect(x: tabW * 4 + 6, y: barTop + 4, width: tabW - 12, height: barH - 8),
                     ]
-
                     CoachMarkOverlay(
                         steps: CoachStep.dispatchSteps,
                         anchors: anchors,
@@ -97,8 +95,9 @@ struct RoyalTabView: View {
                             hideTutorial = true
                         }
                     )
-                    .transition(.opacity)
                 }
+                .ignoresSafeArea()
+                .transition(.opacity)
             }
         }
         .onAppear {
