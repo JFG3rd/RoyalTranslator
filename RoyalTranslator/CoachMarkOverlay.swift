@@ -71,25 +71,26 @@ struct CoachStep: Identifiable {
                   titleKey: "coach_s6_title", bodyKey: "coach_s6_body",
                   placement: .belowSpot),
 
-        // 7 — Court tab (exact rect injected via extraRects in RoyalTabView)
+        // 7 — Court tab (rect injected via extraRects from actual UITabBar frame)
+        // .auto: bubble goes above if tab bar is at bottom, below if tab bar is at top
         CoachStep(id: 6, anchorID: "tab_court",
                   titleKey: "coach_s7_title", bodyKey: "coach_s7_body",
-                  placement: .aboveSpot),
+                  placement: .auto),
 
         // 8 — Archives tab
         CoachStep(id: 7, anchorID: "tab_archives",
                   titleKey: "coach_s8_title", bodyKey: "coach_s8_body",
-                  placement: .aboveSpot),
+                  placement: .auto),
 
         // 9 — Favourites tab
         CoachStep(id: 8, anchorID: "tab_favourites",
                   titleKey: "coach_s9_title", bodyKey: "coach_s9_body",
-                  placement: .aboveSpot),
+                  placement: .auto),
 
         // 10 — Realm tab
         CoachStep(id: 9, anchorID: "tab_realm",
                   titleKey: "coach_s10_title", bodyKey: "coach_s10_body",
-                  placement: .aboveSpot),
+                  placement: .auto),
     ]}
 }
 

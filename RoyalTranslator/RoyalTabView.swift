@@ -66,22 +66,13 @@ struct RoyalTabView: View {
             }
         }
         // Coach mark overlay.
-        // The GeometryReader uses .ignoresSafeArea() so geo.size == full screen size,
-        // which lets us accurately calculate where the tab bar items sit.
+        // GeometryReader is inside the overlay with .ignoresSafeArea() so geo.size == full screen.
+        // Tab bar rects are read from UIKit directly so they work regardless of whether iOS
+        // places the tab bar at the top or the bottom.
         .overlayPreferenceValue(CoachAnchorKey.self) { anchors in
             if showCoachTutorial {
                 GeometryReader { geo in
-                    let safeBottom = geo.safeAreaInsets.bottom
-                    let barH: CGFloat = 49
-                    let barTop = geo.size.height - barH - safeBottom
-                    let tabW = geo.size.width / 5
-                    let tabRects: [String: CGRect] = [
-                        "tab_dispatch":   CGRect(x: tabW * 0 + 6, y: barTop + 4, width: tabW - 12, height: barH - 8),
-                        "tab_court":      CGRect(x: tabW * 1 + 6, y: barTop + 4, width: tabW - 12, height: barH - 8),
-                        "tab_archives":   CGRect(x: tabW * 2 + 6, y: barTop + 4, width: tabW - 12, height: barH - 8),
-                        "tab_favourites": CGRect(x: tabW * 3 + 6, y: barTop + 4, width: tabW - 12, height: barH - 8),
-                        "tab_realm":      CGRect(x: tabW * 4 + 6, y: barTop + 4, width: tabW - 12, height: barH - 8),
-                    ]
+                    let tabRects = liveTabRects(screenSize: geo.size)
                     CoachMarkOverlay(
                         steps: CoachStep.dispatchSteps,
                         anchors: anchors,
@@ -107,6 +98,47 @@ struct RoyalTabView: View {
                 }
             }
         }
+    }
+
+    // Read the actual UITabBar frame from the UIKit hierarchy.
+    // This works regardless of whether iOS puts the tab bar at the top or bottom.
+    private func liveTabRects(screenSize: CGSize) -> [String: CGRect] {
+        let tabBarFrame: CGRect
+
+        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = scene.windows.first(where: { $0.isKeyWindow }),
+           let tbc = findTabBarController(in: window.rootViewController) {
+            tabBarFrame = tbc.tabBar.frame
+        } else {
+            // Fallback — should rarely fire; assume standard bottom tab bar
+            let safeBottom = UIApplication.shared.connectedScenes
+                .compactMap { ($0 as? UIWindowScene)?.windows.first?.safeAreaInsets.bottom }
+                .first ?? 0
+            tabBarFrame = CGRect(x: 0, y: screenSize.height - 49 - safeBottom,
+                                 width: screenSize.width, height: 49)
+        }
+
+        let names = ["tab_dispatch", "tab_court", "tab_archives", "tab_favourites", "tab_realm"]
+        let tabW = tabBarFrame.width / CGFloat(names.count)
+        var result: [String: CGRect] = [:]
+        for (i, name) in names.enumerated() {
+            result[name] = CGRect(
+                x: tabBarFrame.minX + tabW * CGFloat(i) + 6,
+                y: tabBarFrame.minY + 4,
+                width: tabW - 12,
+                height: tabBarFrame.height - 8
+            )
+        }
+        return result
+    }
+
+    private func findTabBarController(in vc: UIViewController?) -> UITabBarController? {
+        guard let vc else { return nil }
+        if let tbc = vc as? UITabBarController { return tbc }
+        for child in vc.children {
+            if let found = findTabBarController(in: child) { return found }
+        }
+        return nil
     }
 }
 
