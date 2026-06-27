@@ -4,14 +4,12 @@ struct DispatchView: View {
     @EnvironmentObject var court: CourtViewModel
     @EnvironmentObject var service: TranslatorService
     let theme: AppTheme
+    var onShowTutorial: (() -> Void)? = nil
 
     @State private var inputText = ""
     @State private var translateDidSucceed = false
     @State private var showCourtSheet = false
-    @State private var showTutorial = false
     @FocusState private var inputFocused: Bool
-
-    @AppStorage("hideTutorial") private var hideTutorial = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -41,8 +39,11 @@ struct DispatchView: View {
             CourtView(theme: theme, sheetMode: true) { showCourtSheet = false }
                 .environmentObject(court)
         }
-        .sheet(isPresented: $showTutorial) {
-            TutorialView(isPresented: $showTutorial, theme: theme)
+        .onReceive(NotificationCenter.default.publisher(for: .redispatchText)) { n in
+            if let text = n.object as? String {
+                inputText = text
+                inputFocused = true
+            }
         }
     }
 
@@ -57,7 +58,7 @@ struct DispatchView: View {
                     .foregroundColor(theme.accent)
             }
             Spacer()
-            Button(action: { showTutorial = true }) {
+            Button(action: { onShowTutorial?() }) {
                 Image(systemName: "questionmark.circle")
                     .font(.system(size: theme.scaled(18)))
                     .foregroundColor(theme.faded)
@@ -72,6 +73,7 @@ struct DispatchView: View {
     var conversationArea: some View {
         ScrollViewReader { proxy in
             ScrollView {
+
                 LazyVStack(spacing: 14) {
                     if service.history.isEmpty && !service.isLoading {
                         emptyState
@@ -136,6 +138,7 @@ struct DispatchView: View {
                     proxy.scrollTo("bottom", anchor: .bottom)
                 }
             }
+            .coachMarkAnchor("conversation")
         }
     }
 
@@ -200,6 +203,7 @@ struct DispatchView: View {
                 .overlay(RoundedRectangle(cornerRadius: 20)
                     .stroke(court.activeStyleIDs.isEmpty ? theme.faded.opacity(0.4) : theme.accent, lineWidth: 1))
             }
+            .coachMarkAnchor("court_badge")
 
             // Text input
             ZStack(alignment: .topLeading) {
@@ -223,6 +227,7 @@ struct DispatchView: View {
             .background(theme.inputFill)
             .cornerRadius(18)
             .overlay(RoundedRectangle(cornerRadius: 18).stroke(theme.cardStroke, lineWidth: 1))
+            .coachMarkAnchor("text_input")
 
             // Send button
             Button(action: translate) {
@@ -243,6 +248,7 @@ struct DispatchView: View {
             }
             .disabled(!canTranslate)
             .animation(.spring(response: 0.25, dampingFraction: 0.6), value: translateDidSucceed)
+            .coachMarkAnchor("send_button")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
