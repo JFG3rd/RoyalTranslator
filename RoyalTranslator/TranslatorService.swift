@@ -6,12 +6,14 @@ struct TranslationEntry: Identifiable, Codable {
     let original: String
     let styles: [TranslationStyle]
     let results: [String: String]
+    let date: Date
 
     init(original: String, styles: [TranslationStyle], results: [String: String]) {
         self.id = UUID()
         self.original = original
         self.styles = styles
         self.results = results
+        self.date = Date()
     }
 }
 
@@ -20,7 +22,8 @@ class TranslatorService: ObservableObject {
     @Published var history: [TranslationEntry] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
-    @Published var favoritedIDs: Set<UUID> = []
+    // Composite keys: "\(entryID.uuidString):\(styleID)" — favourites individual character bubbles
+    @Published var favoritedIDs: Set<String> = []
 
     var apiKey = ""
 
@@ -48,6 +51,8 @@ class TranslatorService: ObservableObject {
         history = decoded
     }
 
+    func saveHistoryPublic() { saveHistory() }
+
     private func saveHistory() {
         guard let data = try? JSONEncoder().encode(history) else { return }
         try? data.write(to: Self.historyURL, options: .atomic)
@@ -55,7 +60,7 @@ class TranslatorService: ObservableObject {
 
     private func loadFavorites() {
         guard let data = try? Data(contentsOf: Self.favoritesURL),
-              let decoded = try? JSONDecoder().decode(Set<UUID>.self, from: data)
+              let decoded = try? JSONDecoder().decode(Set<String>.self, from: data)
         else { return }
         favoritedIDs = decoded
     }
@@ -65,8 +70,10 @@ class TranslatorService: ObservableObject {
         try? data.write(to: Self.favoritesURL, options: .atomic)
     }
 
-    func toggleFavorite(_ id: UUID) {
-        if favoritedIDs.contains(id) { favoritedIDs.remove(id) } else { favoritedIDs.insert(id) }
+    // Key is either a composite "entryUUID:styleID" string or a bare UUID string (legacy)
+    func toggleFavorite(_ key: String) {
+        if favoritedIDs.contains(key) { favoritedIDs.remove(key) }
+        else { favoritedIDs.insert(key) }
         saveFavorites()
     }
 
