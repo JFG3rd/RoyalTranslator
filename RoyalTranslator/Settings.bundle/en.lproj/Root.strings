@@ -15,5 +15,10 @@
 "CLEAR_API_KEY_TITLE"   = "Clear saved API key on next launch";
 "API_KEY_FOOTER"        = "Your API key is stored in the secure device Keychain. By default it is wiped if you reinstall the app. Enable \"Keep API key\" to preserve it across reinstalls.";
 
+/* Interface Style */
+"INTERFACE_GROUP"       = "Interface";
+"INTERFACE_FOOTER"      = "Switch to Classic view for the original single-scroll layout. The new Court Dispatch view uses a chat-bubble conversation design with a tab bar.";
+"CLASSIC_UI_TITLE"      = "Use Classic view";
+
 /* Privacy */
 "PRIVACY_FOOTER"      = "The Royal Translator sends your input text to Anthropic's Claude API to generate translations. No data is stored on external servers beyond what Anthropic retains per their privacy policy.";

@@ -54,6 +54,19 @@
             <key>DefaultValue</key>    <false/>
         </dict>
 
+        <!-- Interface Style -->
+        <dict>
+            <key>Type</key>            <string>PSGroupSpecifier</string>
+            <key>Title</key>           <string>INTERFACE_GROUP</string>
+            <key>FooterText</key>      <string>INTERFACE_FOOTER</string>
+        </dict>
+        <dict>
+            <key>Type</key>            <string>PSToggleSwitchSpecifier</string>
+            <key>Title</key>           <string>CLASSIC_UI_TITLE</string>
+            <key>Key</key>             <string>use_classic_ui</string>
+            <key>DefaultValue</key>    <false/>
+        </dict>
+
         <!-- Privacy -->
         <dict>
             <key>Type</key>            <string>PSGroupSpecifier</string>

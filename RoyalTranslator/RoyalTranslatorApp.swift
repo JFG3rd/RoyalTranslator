@@ -8,6 +8,7 @@ struct RoyalTranslatorApp: App {
     @State private var apiKeySet = false
     @State private var apiKey = ""
     @AppStorage("hideTutorial") private var hideTutorial = false
+    @AppStorage("use_classic_ui") private var useClassicUI = false
 
     init() {
         KeychainHelper.wipeIfReinstalled()
@@ -19,20 +20,27 @@ struct RoyalTranslatorApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if apiKeySet {
-                    RoyalTabView()
+                if useClassicUI {
+                    // Classic single-scroll layout — self-contained key entry
+                    ContentView()
                         .environmentObject(service)
-                        .environmentObject(court)
                 } else {
-                    KeyEntryView(
-                        apiKey: $apiKey,
-                        hideTutorial: $hideTutorial,
-                        onCommit: { key in
-                            service.apiKey = key
-                            KeychainHelper.save(key)
-                            apiKeySet = true
-                        }
-                    )
+                    // Court Dispatch tab bar layout
+                    if apiKeySet {
+                        RoyalTabView()
+                            .environmentObject(service)
+                            .environmentObject(court)
+                    } else {
+                        KeyEntryView(
+                            apiKey: $apiKey,
+                            hideTutorial: $hideTutorial,
+                            onCommit: { key in
+                                service.apiKey = key
+                                KeychainHelper.save(key)
+                                apiKeySet = true
+                            }
+                        )
+                    }
                 }
             }
             .onAppear {
@@ -50,7 +58,8 @@ struct RoyalTranslatorApp: App {
         UserDefaults.standard.register(defaults: [
             "clear_api_key": false,
             "persist_api_key": false,
-            "fontSizeBase": 17.0
+            "fontSizeBase": 17.0,
+            "use_classic_ui": false
         ])
         if UserDefaults.standard.bool(forKey: "clear_api_key") {
             KeychainHelper.delete()

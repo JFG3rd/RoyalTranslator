@@ -15,5 +15,10 @@
 "CLEAR_API_KEY_TITLE"   = "Gespeicherten API-Schlüssel beim nächsten Start löschen";
 "API_KEY_FOOTER"        = "Dein API-Schlüssel wird im sicheren Geräteschlüsselbund gespeichert. Standardmäßig wird er bei einer Neuinstallation gelöscht. Aktiviere \"API-Schlüssel behalten\", um ihn über Neuinstallationen hinaus zu bewahren.";
 
+/* Benutzeroberfläche */
+"INTERFACE_GROUP"       = "Oberfläche";
+"INTERFACE_FOOTER"      = "Wechsle zur klassischen Ansicht mit dem ursprünglichen Einzel-Scroll-Layout. Die neue Court-Dispatch-Ansicht verwendet ein Chat-Blasen-Design mit einer Tab-Leiste.";
+"CLASSIC_UI_TITLE"      = "Klassische Ansicht verwenden";
+
 /* Datenschutz */
 "PRIVACY_FOOTER"      = "Der Königliche Übersetzer sendet deinen Text an Anthropics Claude-API, um Übersetzungen zu erstellen. Es werden keine Daten auf externen Servern gespeichert, außer was Anthropic gemäß ihrer Datenschutzrichtlinie verarbeitet.";
